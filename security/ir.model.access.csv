@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_fishing_vessel,fishing.vessel,model_fishing_vessel,base.group_user,1,1,1,1
+access_fishing_zone,fishing.zone,model_fishing_zone,base.group_user,1,1,1,1
+access_fishing_shoal,fishing.shoal,model_fishing_shoal,base.group_user,1,1,1,1
+access_fishing_zone_log,fishing.zone.log,model_fishing_zone_log,base.group_system,1,1,1,1
+access_fishing_capture_wizard,fishing.capture.wizard,model_fishing_capture_wizard,base.group_system,1,1,1,1
+access_fishing_report_wizard,fishing.report.wizard,model_fishing_report_wizard,base.group_user,1,1,1,1
