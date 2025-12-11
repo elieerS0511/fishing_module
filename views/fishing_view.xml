@@ -1,12 +1,19 @@
 <odoo>
+    <!-- ================================================================== -->
+    <!-- Wizards (Asistentes)                                                 -->
+    <!-- ================================================================== -->
+    <!-- Define las acciones y vistas para las ventanas emergentes (wizards) que guían al usuario en tareas específicas. -->
+
     <!-- Wizard para reportar captura -->
+    <!-- Acción de ventana que abre el wizard para registrar una captura. -->
     <record id="action_fishing_capture_wizard" model="ir.actions.act_window">
         <field name="name">Reportar Captura</field>
         <field name="res_model">fishing.capture.wizard</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
     </record>
-    
+
+    <!-- Vista de formulario para el wizard de captura. -->
     <record id="view_fishing_capture_wizard_form" model="ir.ui.view">
         <field name="name">fishing.capture.wizard.form</field>
         <field name="model">fishing.capture.wizard</field>
@@ -30,6 +37,7 @@
     </record>
 
     <!-- Wizard para reportes gráficos -->
+    <!-- Vista de formulario para el wizard de generación de reportes. -->
     <record id="view_fishing_report_wizard_form" model="ir.ui.view">
         <field name="name">fishing.report.wizard.form</field>
         <field name="model">fishing.report.wizard</field>
@@ -39,6 +47,7 @@
                     <div class="container">
                         <div class="row">
                         <div class="col">
+                            <!-- Sección de filtros para el reporte -->
                             <group string="Parámetros del Reporte">
                             <field name="date_from"/>
                             <field name="date_to"/>
@@ -50,6 +59,7 @@
                         </div>
                         <div class="row">
                             <div class="col">
+                                <!-- Sección donde se muestran los resultados (datos y gráfico) -->
                                 <group string="Resultado">
                                 <field name="report_filename"/>
                                 <field name="report_data" widget="text" nolabel="1"/>
@@ -68,7 +78,7 @@
         </field>
     </record>
 
-    <!-- Acción para el wizard de reportes -->
+    <!-- Acción de ventana que abre el wizard de reportes. -->
     <record id="action_fishing_report_wizard" model="ir.actions.act_window">
         <field name="name">Reportes Gráficos</field>
         <field name="res_model">fishing.report.wizard</field>
@@ -76,20 +86,27 @@
         <field name="target">new</field>
     </record>
 
-    <!-- Vista de Navío -->
+
+    <!-- ================================================================== -->
+    <!-- Vistas de Modelos Principales                                      -->
+    <!-- ================================================================== -->
+    <!-- Define cómo se muestran los datos de los modelos principales (navíos, zonas, etc.) en la interfaz de usuario. -->
+
+    <!-- Vista de Formulario de Navío (fishing.vessel) -->
     <record id="view_fishing_vessel_form" model="ir.ui.view">
         <field name="name">fishing.vessel.form</field>
         <field name="model">fishing.vessel</field>
         <field name="arch" type="xml">
             <form>
+                <!-- Cabecera con el estado y el botón para reportar captura. -->
                 <header>
                     <field name="state" widget="statusbar" options="{'clickable': '1'}"/>
-    
-                    <button name="%(action_fishing_capture_wizard)d" 
-                        string="Reportar Captura" 
-                        type="action" 
-                        class="oe_highlight" 
-                        invisible="state != 'fishing'"/> 
+                    <!-- El botón solo es visible si el estado del navío es 'En Faena' (fishing). -->
+                    <button name="%(action_fishing_capture_wizard)d"
+                        string="Reportar Captura"
+                        type="action"
+                        class="oe_highlight"
+                        invisible="state != 'fishing'"/>
                 </header>
                 <sheet>
                     <field name="image" widget="image" class="oe_avatar"/>
@@ -108,7 +125,7 @@
                             <field name="last_departure_datetime"/>
                             <label for="current_latitude" string="Coordenadas GPS"/>
                             <div class="o_row">
-                                <field name="current_latitude" placeholder="Lat"/> / 
+                                <field name="current_latitude" placeholder="Lat"/> /
                                 <field name="current_longitude" placeholder="Long"/>
                             </div>
                         </group>
@@ -118,10 +135,12 @@
         </field>
     </record>
 
+    <!-- Vista de Lista de Navío (fishing.vessel) -->
     <record id="view_fishing_vessel_list" model="ir.ui.view">
         <field name="name">fishing.vessel.list</field>
         <field name="model">fishing.vessel</field>
         <field name="arch" type="xml">
+            <!-- Colorea las filas según el estado del navío para una rápida identificación. -->
             <list decoration-info="state == 'fishing'" decoration-danger="state == 'maintenance'">
                 <field name="name"/>
                 <field name="current_zone_id" optional="show"/>
@@ -132,7 +151,7 @@
         </field>
     </record>
 
-    <!-- Vista de Zona -->
+    <!-- Vista de Formulario de Zona (fishing.zone) -->
     <record id="view_fishing_zone_form" model="ir.ui.view">
         <field name="name">fishing.zone.form</field>
         <field name="model">fishing.zone</field>
@@ -152,7 +171,9 @@
                             <field name="longitude"/>
                         </group>
                     </group>
+                    <!-- Pestañas para mostrar información relacionada -->
                     <notebook>
+                        <!-- Pestaña para ver los navíos actualmente en esta zona. -->
                         <page string="Navíos en la Zona">
                             <field name="vessel_ids" readonly="1">
                                 <list>
@@ -163,6 +184,7 @@
                                 </list>
                             </field>
                         </page>
+                        <!-- Pestaña para ver el historial de actividades en esta zona. -->
                         <page string="Bitácora de Operaciones">
                             <field name="log_ids" readonly="1">
                                 <list editable="bottom">
@@ -180,7 +202,12 @@
         </field>
     </record>
 
-    <!-- Acciones principales -->
+
+    <!-- ================================================================== -->
+    <!-- Acciones de Ventana (Window Actions)                               -->
+    <!-- ================================================================== -->
+    <!-- Definen cómo se abren las vistas de los modelos (listas, formularios). Son el objetivo de los elementos del menú. -->
+
     <record id="action_fishing_vessel" model="ir.actions.act_window">
         <field name="name">Navíos</field>
         <field name="res_model">fishing.vessel</field>
@@ -199,9 +226,16 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <!-- Menús -->
+
+    <!-- ================================================================== -->
+    <!-- Menús                                                              -->
+    <!-- ================================================================== -->
+    <!-- Define la estructura de navegación del módulo en la interfaz de Odoo. -->
+
+    <!-- Menú raíz del módulo -->
     <menuitem id="menu_fishing_root" name="Pesca2" web_icon="fishing_management,static/description/icon.png"/>
-    
+
+    <!-- Elementos del menú principal -->
     <menuitem id="menu_shoal" name="Cardúmenes" parent="menu_fishing_root" sequence="10" action="action_fishing_shoal"/>
     <menuitem id="menu_vessel" name="Navíos" parent="menu_fishing_root" sequence="20" action="action_fishing_vessel"/>
     <menuitem id="menu_zone" name="Zonas Pesqueras" parent="menu_fishing_root" sequence="30" action="action_fishing_zone"/>
