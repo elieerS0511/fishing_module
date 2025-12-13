@@ -1,38 +1,40 @@
-# -*- coding: utf-8 -*-
-# Este archivo define los modelos de datos para la gestión de la actividad pesquera.
-# Incluye modelos para zonas de pesca, navíos, bitácoras de actividad,
-# avistamiento de cardúmenes y asistentes (wizards) para reportes.
-
+import matplotlib
+matplotlib.use('Agg')  # DEBE ESTAR ANTES de importar plt
 from odoo import models, fields, api, exceptions
 import base64
 import io
 from datetime import date, timedelta
 import matplotlib.pyplot as plt
 
-class FishingZoneLog(models.Model):
-    """Bitácora de Actividad en Zona.
+# Configuración para reducir uso de memoria
+plt.rcParams.update({
+    'figure.max_open_warning': 0,
+    'figure.figsize': (10.0, 7.0),  # Tamaño reducido
+    'savefig.dpi': 100,  # DPI más bajo
+    'savefig.bbox': 'tight',
+    'savefig.pad_inches': 0.05,
+    'axes.labelsize': 9,
+    'axes.titlesize': 10,
+    'font.size': 8,
+    'legend.fontsize': 8,
+})
 
-    Registra eventos relacionados con una zona pesquera: entradas, salidas
-    y reportes de captura. Contiene campos de referencia a la zona y al
-    navío, tipo de actividad y datos de captura cuando aplique.
-    """
+class FishingZoneLog(models.Model):
+    """Bitácora de Actividad en Zona."""
     _name = 'fishing.zone.log'
     _description = 'Bitácora de Actividad en Zona'
-    _order = 'date desc' # Ordenar por fecha, lo más reciente primero
+    _order = 'date desc'
 
-    # --- Campos del Modelo ---
     zone_id = fields.Many2one('fishing.zone', string='Zona Pesquera', required=True, ondelete='cascade')
     vessel_id = fields.Many2one('fishing.vessel', string='Navío', required=True)
     date = fields.Datetime(string='Fecha y Hora', default=fields.Datetime.now, required=True)
-
-    # Tipo de evento que se está registrando en la bitácora.
+    
     activity_type = fields.Selection([
         ('entry', 'Entrada a Zona'),
         ('exit', 'Salida de Zona'),
         ('capture', 'Reporte de Captura')
     ], string='Tipo de Actividad', required=True)
 
-    # Campos específicos para la captura (opcionales si es solo entrada/salida)
     species = fields.Selection([
         ('anchovy', 'Anchoa'),
         ('sardine', 'Sardina'),
@@ -40,19 +42,92 @@ class FishingZoneLog(models.Model):
         ('tuna', 'Atún'),
         ('cod', 'Bacalao')
     ], string='Especie Capturada')
-
+    
     catch_kg = fields.Float(string='Captura (Kg)')
 
-class FishingZone(models.Model):
-    """Representa una zona pesquera.
 
-    Almacena información geográfica y tipificación de la zona, además de
-    relaciones inversas a navíos y registros de bitácora asociados.
-    """
+class FishingVesselLog(models.Model):
+    """Bitácora detallada del navío."""
+    _name = 'fishing.vessel.log'
+    _description = 'Bitácora del Navío'
+    _order = 'log_date desc'
+    
+    vessel_id = fields.Many2one(
+        'fishing.vessel', 
+        string='Navío', 
+        required=True, 
+        ondelete='cascade'
+    )
+    
+    log_date = fields.Datetime(
+        string='Fecha y Hora', 
+        default=fields.Datetime.now,
+        required=True
+    )
+    
+    log_type = fields.Selection([
+        ('zone_entry', 'Entrada a Zona'),
+        ('zone_exit', 'Salida de Zona'),
+        ('capture', 'Reporte de Captura'),
+        ('checkpoint', 'Punto de Control'),
+        ('status_change', 'Cambio de Estado'),
+        ('departure', 'Zarpe'),
+        ('arrival', 'Arribo'),
+        ('maintenance_start', 'Inicio Mantenimiento'),
+        ('maintenance_end', 'Fin Mantenimiento'),
+        ('crew_change', 'Cambio de Tripulación'),
+        ('fuel_loading', 'Carga de Combustible'),
+        ('supply_loading', 'Carga de Provisiones'),
+        ('inspection', 'Inspección'),
+        ('emergency', 'Emergencia')
+    ], string='Tipo de Evento', required=True)
+    
+    zone_id = fields.Many2one('fishing.zone', string='Zona')
+    
+    latitude = fields.Float(string='Latitud', digits=(10, 7))
+    longitude = fields.Float(string='Longitud', digits=(10, 7))
+    
+    species = fields.Selection([
+        ('anchovy', 'Anchoa'),
+        ('sardine', 'Sardina'),
+        ('mackerel', 'Caballa'),
+        ('tuna', 'Atún'),
+        ('cod', 'Bacalao')
+    ], string='Especie Capturada')
+    
+    catch_kg = fields.Float(string='Captura (Kg)')
+    
+    notes = fields.Text(string='Notas Adicionales')
+    
+    # Campos calculados optimizados
+    zone_name = fields.Char(string='Zona', compute='_compute_zone_name', store=True)
+    vessel_name = fields.Char(string='Navío', compute='_compute_vessel_name', store=True)
+    vessel_state = fields.Char(string='Estado', compute='_compute_vessel_state', store=True)
+    
+    @api.depends('zone_id')
+    def _compute_zone_name(self):
+        for record in self:
+            record.zone_name = record.zone_id.name if record.zone_id else ''
+    
+    @api.depends('vessel_id')
+    def _compute_vessel_name(self):
+        for record in self:
+            if record.vessel_id:
+                record.vessel_name = f"{record.vessel_id.name} [{record.vessel_id.license_plate}]"
+            else:
+                record.vessel_name = ''
+    
+    @api.depends('vessel_id.state')
+    def _compute_vessel_state(self):
+        for record in self:
+            record.vessel_state = record.vessel_id.state if record.vessel_id else ''
+
+
+class FishingZone(models.Model):
+    """Representa una zona pesquera."""
     _name = 'fishing.zone'
     _description = 'Zona Pesquera'
 
-    # --- Campos del Modelo ---
     name = fields.Char(string='Nombre de la Zona', required=True)
     code = fields.Char(string='Código de Zona')
     latitude = fields.Float(string='Latitud Centro', digits=(10, 7))
@@ -64,167 +139,241 @@ class FishingZone(models.Model):
     ], string='Tipo de Zona', required=True)
     active = fields.Boolean(default=True)
 
-    # Relación inversa: Muestra los navíos que están actualmente en esta zona.
     vessel_ids = fields.One2many(
-        'fishing.vessel',
-        'current_zone_id',
+        'fishing.vessel', 
+        'current_zone_id', 
         string='Navíos en la Zona'
     )
-    # Relación inversa: Muestra todos los registros de bitácora asociados a esta zona.
     log_ids = fields.One2many(
-        'fishing.zone.log',
-        'zone_id',
+        'fishing.zone.log', 
+        'zone_id', 
         string='Bitácora de Actividades'
     )
 
-class FishingVessel(models.Model):
-    """Modelo que representa un navío pesquero.
 
-    Incluye información identificativa, estado operativo y ubicación,
-    además de automatización para crear eventos en la bitácora cuando
-    cambia la zona actual del navío.
-    """
+class FishingVessel(models.Model):
+    """Modelo que representa un navío pesquero."""
     _name = 'fishing.vessel'
     _description = 'Navío Pesquero'
-    _inherit = ['mail.thread', 'mail.activity.mixin'] # Herencia para chatter y actividades
+    _inherit = ['mail.thread', 'mail.activity.mixin']
 
-    # --- Campos del Modelo ---
     name = fields.Char(string='Nombre del Navío', required=True, tracking=True)
     license_plate = fields.Char(string='Matrícula', required=True)
     captain_id = fields.Many2one('res.partner', string='Capitán')
     capacity_kg = fields.Float(string='Capacidad de Bodega (Kg)')
-
-    # Estado operativo del navío, con tracking para registrar cambios en el chatter.
+    
     state = fields.Selection([
         ('docked', 'En Muelle'),
         ('fishing', 'En Faena'),
         ('maintenance', 'Mantenimiento')
     ], string='Estado', default='docked', tracking=True)
 
-    lasted_viaje_date = fields.Date(
-        string='Fecha del Último Viaje (Histórico)',
-        default=fields.Date.context_today
-    )
-    lasted_viaje_ubication = fields.Char(string='Ubicación Texto')
-
-    # Zona en la que el navío se encuentra actualmente. El tracking es clave para la automatización.
+    last_departure_datetime = fields.Datetime(string='Fecha y Hora de Zarpe', tracking=True)
+    
     current_zone_id = fields.Many2one(
-        'fishing.zone',
+        'fishing.zone', 
         string='Zona Actual / Destino',
         tracking=True
     )
 
-    last_departure_datetime = fields.Datetime(string='Fecha y Hora de Zarpe', tracking=True)
-
     current_latitude = fields.Float(string='Latitud Actual', digits=(10, 7))
     current_longitude = fields.Float(string='Longitud Actual', digits=(10, 7))
 
-    # Campo calculado para controlar la visibilidad del botón de reportar captura.
-    # No se almacena en la base de datos, se calcula en tiempo real.
-    can_report_capture = fields.Boolean(
-        string='Puede Reportar Captura',
-        compute='_compute_can_report_capture',
-        store=False,
+    vessel_log_ids = fields.One2many(
+        'fishing.vessel.log',
+        'vessel_id',
+        string='Bitácora del Navío',
+        readonly=True
     )
-
-    @api.depends('state')
-    def _compute_can_report_capture(self):
-        """ Determina si el navío está en estado 'fishing' (En Faena).
-        Este método es el 'compute' del campo 'can_report_capture'.
-        """
-        for vessel in self:
-            vessel.can_report_capture = (vessel.state == 'fishing')
-
-
-    # --- LÓGICA DE AUTOMATIZACIÓN DE BITÁCORA ---
-
+    
+    image = fields.Image(string="Foto del Navío")
+    tripulation_size = fields.Integer(string='Tamaño de la Tripulación')
+    
     @api.model
     def create(self, vals):
-        """ Sobrescribe el método 'create' para automatización.
-        Si un navío se crea y ya tiene una zona asignada, genera
-        automáticamente un registro de 'entrada' en la bitácora.
-        """
+        """Crear navío y registrar entrada a zona si aplica."""
         record = super(FishingVessel, self).create(vals)
-
-        # Si se crea con una zona asignada, registra una entrada.
         if record.current_zone_id:
-            record._register_zone_change(record.current_zone_id.id, activity_type='entry')
-
+            record._register_zone_change(record.current_zone_id.id, 'entry')
         return record
 
     def write(self, vals):
-        """ Sobrescribe el método 'write' para automatización.
-        Detecta si el campo 'current_zone_id' está siendo modificado.
-        Si es así, registra la 'salida' de la zona anterior y la 'entrada'
-        a la nueva zona.
-        """
-        # 1. Detectar si se está cambiando la zona actual.
+        """Registrar cambios de estado y zona en bitácora."""
+        # Registrar cambio de estado
+        if 'state' in vals:
+            old_state = self.state
+            new_state = vals['state']
+            self._register_status_change(old_state, new_state)
+        
+        # Registrar cambio de zona
         if 'current_zone_id' in vals:
             old_zone_id = self.current_zone_id.id
             new_zone_id = vals['current_zone_id']
-
-            # 2. Primero, llamar al write original para actualizar el registro.
-            # Es importante hacerlo antes de crear los logs para que los datos estén actualizados.
+            
             result = super(FishingVessel, self).write(vals)
 
-            # 3. Registrar la salida de la zona anterior (si existía y era diferente a la nueva).
             if old_zone_id and old_zone_id != new_zone_id:
-                self._register_zone_change(old_zone_id, activity_type='exit')
-
-            # 4. Registrar la entrada a la nueva zona (si existe y era diferente a la anterior).
+                self._register_zone_change(old_zone_id, 'exit')
             if new_zone_id and old_zone_id != new_zone_id:
-                self._register_zone_change(new_zone_id, activity_type='entry')
-
+                self._register_zone_change(new_zone_id, 'entry')
+                
             return result
-        else:
-            # Si no se cambia la zona, simplemente llamar al write original sin lógica adicional.
-            return super(FishingVessel, self).write(vals)
+        
+        return super(FishingVessel, self).write(vals)
 
     def _register_zone_change(self, zone_id, activity_type):
-        """ Método reutilizable para crear un registro en la bitácora.
-        Es llamado por 'create' y 'write' para registrar entradas y salidas.
-
-        Args:
-            zone_id (int): ID de la zona para la cual registrar el log.
-            activity_type (str): 'entry' o 'exit'.
-        """
-        log_obj = self.env['fishing.zone.log']
-
+        """Registrar entrada/salida de zona."""
         for vessel in self:
-            log_vals = {
+            # Registrar en fishing.zone.log
+            zone_log = self.env['fishing.zone.log'].create({
                 'zone_id': zone_id,
                 'vessel_id': vessel.id,
                 'activity_type': activity_type,
                 'date': fields.Datetime.now(),
-            }
-            log_obj.create(log_vals)
+            })
+            
+            # Registrar en fishing.vessel.log
+            log_type = 'zone_entry' if activity_type == 'entry' else 'zone_exit'
+            zone = self.env['fishing.zone'].browse(zone_id)
+            self.env['fishing.vessel.log'].create({
+                'vessel_id': vessel.id,
+                'log_date': fields.Datetime.now(),
+                'log_type': log_type,
+                'zone_id': zone_id,
+                'latitude': vessel.current_latitude,
+                'longitude': vessel.current_longitude,
+                'notes': f"{'Entrada' if activity_type == 'entry' else 'Salida'} a zona {zone.name}"
+            })
 
+    def _register_status_change(self, old_state, new_state):
+        """Registrar cambio de estado."""
+        for vessel in self:
+            self.env['fishing.vessel.log'].create({
+                'vessel_id': vessel.id,
+                'log_date': fields.Datetime.now(),
+                'log_type': 'status_change',
+                'latitude': vessel.current_latitude,
+                'longitude': vessel.current_longitude,
+                'notes': f"Cambio de estado: {old_state} → {new_state}"
+            })
+    
     @api.onchange('current_zone_id')
     def _onchange_current_zone_id(self):
-        """ Se activa al cambiar la zona en la vista de formulario.
-        Copia las coordenadas de la zona a las coordenadas actuales del navío
-        para facilitar la geolocalización.
-        """
-        self.current_latitude=False
-        self.current_longitude=False
-
+        """Actualizar coordenadas cuando cambia la zona."""
         if self.current_zone_id:
             self.current_latitude = self.current_zone_id.latitude
             self.current_longitude = self.current_zone_id.longitude
+        else:
+            self.current_latitude = False
+            self.current_longitude = False
 
-    image = fields.Image(string="Foto del Navío")
-    tripulation_size = fields.Integer(string='Tamaño de la Tripulación')
+    # --- MÉTODOS DE ACCIÓN OPTIMIZADOS ---
+    
+    def action_register_checkpoint(self):
+        """Registrar punto de control."""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Registrar Punto de Control',
+            'res_model': 'fishing.checkpoint.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_vessel_id': self.id,
+                'default_latitude': self.current_latitude,
+                'default_longitude': self.current_longitude,
+            }
+        }
+    
+    def action_register_departure(self):
+        """Registrar zarpe."""
+        for vessel in self:
+            self.env['fishing.vessel.log'].create({
+                'vessel_id': vessel.id,
+                'log_date': fields.Datetime.now(),
+                'log_type': 'departure',
+                'latitude': vessel.current_latitude,
+                'longitude': vessel.current_longitude,
+                'notes': "Zarpe del navío"
+            })
+            vessel.write({
+                'state': 'fishing',
+                'last_departure_datetime': fields.Datetime.now()
+            })
+        return True
+    
+    def action_register_arrival(self):
+        """Registrar arribo."""
+        for vessel in self:
+            self.env['fishing.vessel.log'].create({
+                'vessel_id': vessel.id,
+                'log_date': fields.Datetime.now(),
+                'log_type': 'arrival',
+                'latitude': vessel.current_latitude,
+                'longitude': vessel.current_longitude,
+                'notes': "Arribo al muelle"
+            })
+            vessel.write({'state': 'docked'})
+        return True
+    
+    def action_start_maintenance(self):
+        """Iniciar mantenimiento."""
+        for vessel in self:
+            self.env['fishing.vessel.log'].create({
+                'vessel_id': vessel.id,
+                'log_date': fields.Datetime.now(),
+                'log_type': 'maintenance_start',
+                'notes': "Inicio de mantenimiento"
+            })
+            vessel.write({'state': 'maintenance'})
+        return True
+    
+    def action_end_maintenance(self):
+        """Finalizar mantenimiento."""
+        for vessel in self:
+            self.env['fishing.vessel.log'].create({
+                'vessel_id': vessel.id,
+                'log_date': fields.Datetime.now(),
+                'log_type': 'maintenance_end',
+                'notes': "Fin de mantenimiento"
+            })
+            vessel.write({'state': 'docked'})
+        return True
+    
+    def _get_wizard_action(self, model_name, name):
+        """Método genérico para obtener acciones de wizard."""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': name,
+            'res_model': model_name,
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {'default_vessel_id': self.id},
+        }
+    
+    def action_register_fuel_loading(self):
+        return self._get_wizard_action('fishing.fuel.wizard', 'Carga de Combustible')
+    
+    def action_register_supplies(self):
+        return self._get_wizard_action('fishing.supplies.wizard', 'Carga de Provisiones')
+    
+    def action_register_crew_change(self):
+        return self._get_wizard_action('fishing.crew.wizard', 'Cambio de Tripulación')
+    
+    def action_register_inspection(self):
+        return self._get_wizard_action('fishing.inspection.wizard', 'Registrar Inspección')
+    
+    def action_register_emergency(self):
+        return self._get_wizard_action('fishing.emergency.wizard', 'Registrar Emergencia')
+
 
 class FishingShoal(models.Model):
-    """Registro de avistamientos de cardúmenes (shoals).
-
-    Permite documentar especie, tonaje estimado, fecha y ubicación del avistamiento.
-    """
+    """Registro de avistamientos de cardúmenes."""
     _name = 'fishing.shoal'
     _description = 'Registro de Cardumen'
 
-    # --- Campos del Modelo ---
-    name = fields.Char(string='Identificador', required=True, default=lambda self: ('Nuevo'))
+    name = fields.Char(string='Identificador', default='Nuevo')
     species = fields.Selection([
         ('anchovy', 'Anchoa'),
         ('sardine', 'Sardina'),
@@ -234,50 +383,39 @@ class FishingShoal(models.Model):
     ], string='Especie', required=True)
     estimated_tonnage = fields.Float(string='Tonelaje Estimado')
     observation_date = fields.Datetime(string='Fecha de Avistamiento', default=fields.Datetime.now)
-
+    
     zone_id = fields.Many2one('fishing.zone', string='Zona de Avistamiento')
     spotted_by_vessel_id = fields.Many2one('fishing.vessel', string='Avistado por Navío')
-
+    
     notes = fields.Text(string='Notas Oceanográficas')
 
     @api.model
     def create(self, vals):
-        """ Sobrescribe 'create' para asignar un nombre de secuencia.
-        Si el nombre es 'Nuevo', genera un identificador único usando
-        la secuencia 'fishing.shoal'.
-        """
+        """Asignar nombre automático."""
         if vals.get('name', 'Nuevo') == 'Nuevo':
             vals['name'] = self.env['ir.sequence'].next_by_code('fishing.shoal') or 'CARDUMEN'
         return super(FishingShoal, self).create(vals)
 
-class FishingCaptureWizard(models.TransientModel):
-    """Wizard (TransientModel) para reportar capturas desde un navío.
 
-    Facilita la creación de un registro de tipo 'capture' en la bitácora
-    asociándolo al navío y zona seleccionados por el usuario.
-    Los TransientModel son para ventanas emergentes (wizards) que no persisten
-    datos a largo plazo.
-    """
+class FishingCaptureWizard(models.TransientModel):
+    """Wizard para reportar capturas."""
     _name = 'fishing.capture.wizard'
     _description = 'Wizard para Reportar Captura'
 
-    # --- Campos del Wizard ---
-    # El navío se obtiene del contexto, usualmente el registro desde donde se abre el wizard.
     vessel_id = fields.Many2one(
-        'fishing.vessel',
-        string='Navío',
-        required=True,
+        'fishing.vessel', 
+        string='Navío', 
+        required=True, 
         default=lambda self: self.env.context.get('active_id')
     )
-
-    # La zona de reporte se calcula a partir de la zona actual del navío.
+    
     current_zone_id = fields.Many2one(
-        'fishing.zone',
+        'fishing.zone', 
         string='Zona de Reporte',
         required=True,
         compute='_compute_zone',
         store=True,
-        readonly=False # Se puede editar por si el reporte es de una zona levemente distinta.
+        readonly=False
     )
 
     species = fields.Selection([
@@ -287,272 +425,416 @@ class FishingCaptureWizard(models.TransientModel):
         ('tuna', 'Atún'),
         ('cod', 'Bacalao')
     ], string='Especie Capturada', required=True)
-
+    
     catch_kg = fields.Float(string='Captura (Kg)', required=True)
 
     @api.depends('vessel_id')
     def _compute_zone(self):
-        """ Copia la zona actual del navío como zona de reporte por defecto. """
+        """Calcular zona por defecto."""
         for record in self:
-            record.current_zone_id = record.vessel_id.current_zone_id.id
-
+            record.current_zone_id = record.vessel_id.current_zone_id
+            
     def action_register_capture(self):
-        """ Función de acción del botón del wizard.
-        Valida los datos y crea el registro de 'capture' en la bitácora.
-        """
+        """Registrar captura en ambas bitácoras."""
         self.ensure_one()
-
-        # 1. Validación para asegurar que hay una zona seleccionada.
+        
         if not self.current_zone_id:
             raise exceptions.UserError('Debe especificar una Zona de Reporte.')
 
-        # 2. Preparar y crear el registro en la bitácora (fishing.zone.log)
-        log_vals = {
+        # Registrar en fishing.zone.log
+        zone_log = self.env['fishing.zone.log'].create({
             'zone_id': self.current_zone_id.id,
             'vessel_id': self.vessel_id.id,
             'activity_type': 'capture',
             'species': self.species,
             'catch_kg': self.catch_kg,
             'date': fields.Datetime.now(),
-        }
-        self.env['fishing.zone.log'].create(log_vals)
+        })
 
-        # 3. Retorna una acción para cerrar la ventana del wizard.
+        # Registrar en fishing.vessel.log
+        species_name = dict(self._fields['species'].selection).get(self.species)
+        self.env['fishing.vessel.log'].create({
+            'vessel_id': self.vessel_id.id,
+            'log_date': fields.Datetime.now(),
+            'log_type': 'capture',
+            'zone_id': self.current_zone_id.id,
+            'species': self.species,
+            'catch_kg': self.catch_kg,
+            'latitude': self.vessel_id.current_latitude,
+            'longitude': self.vessel_id.current_longitude,
+            'notes': f"Captura: {self.catch_kg} kg de {species_name}"
+        })
+        
+        return {'type': 'ir.actions.act_window_close'}
+
+
+# --- WIZARDS SIMPLIFICADOS ---
+
+class FishingCheckpointWizard(models.TransientModel):
+    """Wizard para puntos de control."""
+    _name = 'fishing.checkpoint.wizard'
+    _description = 'Wizard para Puntos de Control'
+    
+    vessel_id = fields.Many2one('fishing.vessel', string='Navío', required=True,
+                               default=lambda self: self.env.context.get('default_vessel_id'))
+    
+    latitude = fields.Float(string='Latitud', digits=(10, 7), required=True,
+                           default=lambda self: self.env.context.get('default_latitude'))
+    
+    longitude = fields.Float(string='Longitud', digits=(10, 7), required=True,
+                            default=lambda self: self.env.context.get('default_longitude'))
+    
+    notes = fields.Text(string='Notas')
+    
+    def action_register_checkpoint(self):
+        self.ensure_one()
+        self.env['fishing.vessel.log'].create({
+            'vessel_id': self.vessel_id.id,
+            'log_date': fields.Datetime.now(),
+            'log_type': 'checkpoint',
+            'latitude': self.latitude,
+            'longitude': self.longitude,
+            'notes': self.notes or "Punto de control registrado"
+        })
+        return {'type': 'ir.actions.act_window_close'}
+
+
+class FishingFuelWizard(models.TransientModel):
+    """Wizard para carga de combustible."""
+    _name = 'fishing.fuel.wizard'
+    _description = 'Wizard para Carga de Combustible'
+    
+    vessel_id = fields.Many2one('fishing.vessel', string='Navío', required=True,
+                               default=lambda self: self.env.context.get('default_vessel_id'))
+    
+    fuel_amount = fields.Float(string='Cantidad (L)', required=True)
+    fuel_cost = fields.Float(string='Costo')
+    supplier = fields.Char(string='Proveedor')
+    notes = fields.Text(string='Notas')
+    
+    def action_register_fuel(self):
+        self.ensure_one()
+        self.env['fishing.vessel.log'].create({
+            'vessel_id': self.vessel_id.id,
+            'log_date': fields.Datetime.now(),
+            'log_type': 'fuel_loading',
+            'notes': f"Carga de {self.fuel_amount}L. Costo: {self.fuel_cost}. {self.notes}"
+        })
+        return {'type': 'ir.actions.act_window_close'}
+
+
+class FishingSuppliesWizard(models.TransientModel):
+    """Wizard para carga de provisiones."""
+    _name = 'fishing.supplies.wizard'
+    _description = 'Wizard para Carga de Provisiones'
+    
+    vessel_id = fields.Many2one('fishing.vessel', string='Navío', required=True,
+                               default=lambda self: self.env.context.get('default_vessel_id'))
+    
+    supplies_type = fields.Selection([
+        ('food', 'Alimentos'),
+        ('water', 'Agua'),
+        ('ice', 'Hielo'),
+        ('fishing_gear', 'Equipo de Pesca'),
+        ('safety', 'Equipo de Seguridad'),
+        ('medical', 'Suministros Médicos'),
+        ('other', 'Otros')
+    ], string='Tipo de Provisiones', required=True)
+    
+    quantity = fields.Float(string='Cantidad', required=True)
+    unit = fields.Char(string='Unidad', default='kg')
+    notes = fields.Text(string='Notas')
+    
+    def action_register_supplies(self):
+        self.ensure_one()
+        supply_type = dict(self._fields['supplies_type'].selection).get(self.supplies_type)
+        self.env['fishing.vessel.log'].create({
+            'vessel_id': self.vessel_id.id,
+            'log_date': fields.Datetime.now(),
+            'log_type': 'supply_loading',
+            'notes': f"Carga: {self.quantity}{self.unit} de {supply_type}. {self.notes}"
+        })
+        return {'type': 'ir.actions.act_window_close'}
+
+
+class FishingCrewWizard(models.TransientModel):
+    """Wizard para cambio de tripulación."""
+    _name = 'fishing.crew.wizard'
+    _description = 'Wizard para Cambio de Tripulación'
+    
+    vessel_id = fields.Many2one('fishing.vessel', string='Navío', required=True,
+                               default=lambda self: self.env.context.get('default_vessel_id'))
+    
+    change_type = fields.Selection([
+        ('boarding', 'Embarque'),
+        ('disembarking', 'Desembarque'),
+        ('captain_change', 'Cambio de Capitán'),
+        ('complete_change', 'Cambio Completo')
+    ], string='Tipo de Cambio', required=True)
+    
+    crew_count = fields.Integer(string='Número de Tripulantes', required=True)
+    notes = fields.Text(string='Detalles')
+    
+    def action_register_crew_change(self):
+        self.ensure_one()
+        change_type = dict(self._fields['change_type'].selection).get(self.change_type)
+        self.env['fishing.vessel.log'].create({
+            'vessel_id': self.vessel_id.id,
+            'log_date': fields.Datetime.now(),
+            'log_type': 'crew_change',
+            'notes': f"{change_type} de {self.crew_count} tripulantes. {self.notes}"
+        })
+        return {'type': 'ir.actions.act_window_close'}
+
+
+class FishingInspectionWizard(models.TransientModel):
+    """Wizard para inspección."""
+    _name = 'fishing.inspection.wizard'
+    _description = 'Wizard para Inspección'
+    
+    vessel_id = fields.Many2one('fishing.vessel', string='Navío', required=True,
+                               default=lambda self: self.env.context.get('default_vessel_id'))
+    
+    inspection_type = fields.Selection([
+        ('safety', 'Seguridad'),
+        ('mechanical', 'Mecánica'),
+        ('sanitary', 'Sanitaria'),
+        ('regular', 'Regular')
+    ], string='Tipo de Inspección', required=True)
+    
+    inspector = fields.Char(string='Inspector', required=True)
+    result = fields.Selection([
+        ('approved', 'Aprobado'),
+        ('conditional', 'Condicional'),
+        ('failed', 'No Aprobado')
+    ], string='Resultado', required=True)
+    
+    notes = fields.Text(string='Notas')
+    
+    def action_register_inspection(self):
+        self.ensure_one()
+        inspection_type = dict(self._fields['inspection_type'].selection).get(self.inspection_type)
+        result = dict(self._fields['result'].selection).get(self.result)
+        self.env['fishing.vessel.log'].create({
+            'vessel_id': self.vessel_id.id,
+            'log_date': fields.Datetime.now(),
+            'log_type': 'inspection',
+            'notes': f"Inspección {inspection_type} por {self.inspector}. Resultado: {result}. {self.notes}"
+        })
+        return {'type': 'ir.actions.act_window_close'}
+
+
+class FishingEmergencyWizard(models.TransientModel):
+    """Wizard para emergencia."""
+    _name = 'fishing.emergency.wizard'
+    _description = 'Wizard para Emergencia'
+    
+    vessel_id = fields.Many2one('fishing.vessel', string='Navío', required=True,
+                               default=lambda self: self.env.context.get('default_vessel_id'))
+    
+    emergency_type = fields.Selection([
+        ('medical', 'Médica'),
+        ('mechanical', 'Mecánica'),
+        ('weather', 'Climática'),
+        ('security', 'Seguridad'),
+        ('other', 'Otra')
+    ], string='Tipo de Emergencia', required=True)
+    
+    severity = fields.Selection([
+        ('low', 'Baja'),
+        ('medium', 'Media'),
+        ('high', 'Alta')
+    ], string='Severidad', required=True)
+    
+    description = fields.Text(string='Descripción', required=True)
+    
+    def action_register_emergency(self):
+        self.ensure_one()
+        emergency_type = dict(self._fields['emergency_type'].selection).get(self.emergency_type)
+        severity = dict(self._fields['severity'].selection).get(self.severity)
+        self.env['fishing.vessel.log'].create({
+            'vessel_id': self.vessel_id.id,
+            'log_date': fields.Datetime.now(),
+            'log_type': 'emergency',
+            'notes': f"EMERGENCIA {severity.upper()}: {emergency_type}. {self.description[:100]}..."
+        })
         return {'type': 'ir.actions.act_window_close'}
 
 class FishingReportWizard(models.TransientModel):
-    """Wizard para generar reportes gráficos y datos agregados de capturas.
-
-    Permite filtrar por fechas, zona y especie y genera una imagen en base64
-    con la gráfica correspondiente, además de un resumen de texto.
-    """
     _name = 'fishing.report.wizard'
-    _description = 'Wizard para Generar Reportes Gráficos'
+    _description = 'Wizard de Reportes de Pesca'
 
-    # --- Campos para filtros del reporte ---
-    date_from = fields.Date(string='Desde', required=True, default=date.today() - timedelta(days=30))
-    date_to = fields.Date(string='Hasta', required=True, default=fields.Date.context_today)
-    zone_id = fields.Many2one('fishing.zone', string='Zona Pesquera')
+    date_from = fields.Date(string='Desde', default=fields.Date.context_today)
+    date_to = fields.Date(string='Hasta', default=fields.Date.context_today)
+    zone_id = fields.Many2one('fishing.zone', string='Zona Específica')
     species = fields.Selection([
-        ('anchovy', 'Anchoa'),
-        ('sardine', 'Sardina'),
-        ('mackerel', 'Caballa'),
         ('tuna', 'Atún'),
-        ('cod', 'Bacalao')
+        ('sardine', 'Sardina'),
+        ('shrimp', 'Camarón'),
+        ('other', 'Otros')
     ], string='Especie')
+    
     report_type = fields.Selection([
-        ('capture_by_species', 'Captura por Especie'),
-        ('capture_by_zone', 'Captura por Zona'),
-        ('vessel_activity', 'Actividad de Navíos'),
-        ('monthly_summary', 'Resumen Mensual')
-    ], string='Tipo de Reporte', required=True, default='capture_by_species')
+        ('by_species', 'Captura por Especie'),
+        ('by_zone', 'Captura por Zona'),
+        ('daily_trend', 'Tendencia Diaria')
+    ], string='Tipo de Reporte', required=True, default='by_species')
 
-    # --- Campos para mostrar los resultados ---
-    report_image = fields.Binary(string='Gráfica', readonly=True)
-    report_filename = fields.Char(string='Nombre del archivo')
-    report_data = fields.Text(string='Datos del Reporte', readonly=True)
+    # Campos de salida
+    report_image = fields.Binary(string='Gráfico Generado', attachment=False)
+    report_filename = fields.Char(string='Nombre Archivo')
+    report_data = fields.Text(string='Datos Resumidos', readonly=True)
 
+    @api.onchange('report_type')
+    def _onchange_report_type(self):
+        """Limpia los campos de resultado (imagen y datos) al cambiar el tipo de reporte."""
+        # Se establece a False para limpiar el campo Binary y Text en la interfaz
+        self.report_image = False
+        self.report_data = False
+        self.report_filename = False
+        
     def generate_report(self):
-        """ Acción principal que genera el reporte.
-        Construye un dominio de búsqueda basado en los filtros, busca los
-        registros de bitácora y llama al método correspondiente para
-        generar el gráfico.
-        """
+        """Genera el gráfico con Matplotlib y recarga la vista."""
         self.ensure_one()
-
-        # 1. Crear dominio de búsqueda con los filtros aplicados.
+        
+        # 1. Obtener datos
         domain = [
-            ('activity_type', '=', 'capture'),
-            ('date', '>=', self.date_from),
-            ('date', '<=', self.date_to)
+            ('log_date', '>=', self.date_from),
+            ('log_date', '<=', self.date_to)
         ]
         if self.zone_id:
             domain.append(('zone_id', '=', self.zone_id.id))
         if self.species:
             domain.append(('species', '=', self.species))
-
-        # 2. Obtener los registros de la bitácora que coinciden con el dominio.
-        logs = self.env['fishing.zone.log'].search(domain)
+            
+        logs = self.env['fishing.vessel.log'].search(domain)
+        
         if not logs:
-            raise exceptions.UserError('No hay datos para los filtros seleccionados.')
+            raise exceptions.UserError("No hay datos de pesca para los criterios seleccionados.")
 
-        # 3. Llamar al método de generación de gráfico según el tipo de reporte seleccionado.
-        image_data = b''
-        if self.report_type == 'capture_by_species':
-            image_data = self._generate_capture_by_species(logs)
-        elif self.report_type == 'capture_by_zone':
-            image_data = self._generate_capture_by_zone(logs)
-        elif self.report_type == 'vessel_activity':
-            image_data = self._generate_vessel_activity(logs)
-        elif self.report_type == 'monthly_summary':
-            image_data = self._generate_monthly_summary(logs)
+        # 2. Preparar datos para plotear
+        data_map = {}
+        
+        if self.report_type == 'by_species':
+            for log in logs:
+                # CORRECCIÓN: Aseguramos que la clave sea un string, incluso si el campo es False.
+                # Utilizamos el nombre de visualización si está disponible, o el valor de la selección.
+                key = dict(log._fields['species'].selection).get(log.species, 'Sin Especie')
+                data_map[key] = data_map.get(key, 0) + log.catch_kg
+            xlabel = 'Especie'
+            ylabel = 'Captura (Kg)'
+            title = 'Captura Total por Especie'
+            
+        elif self.report_type == 'by_zone':
+            for log in logs:
+                # CORRECCIÓN: Si zone_id está vacío (False), usamos la cadena 'Sin Zona'.
+                # Si existe, usamos su nombre.
+                key = log.zone_id.name if log.zone_id else 'Sin Zona' 
+                data_map[key] = data_map.get(key, 0) + log.catch_kg
+            xlabel = 'Zona'
+            ylabel = 'Captura (Kg)'
+            title = 'Captura Total por Zona'
 
-        # 4. Guardar los resultados (imagen y texto) en los campos del wizard.
-        filename = f"reporte_{self.report_type}_{fields.Date.context_today(self)}.png"
+        elif self.report_type == 'daily_trend':
+            for log in logs:
+                # Convertir datetime a date string para agrupar
+                key = log.log_date.strftime('%Y-%m-%d')
+                data_map[key] = data_map.get(key, 0) + log.catch_kg
+            # Ordenar por fecha
+            data_map = dict(sorted(data_map.items()))
+            xlabel = 'Fecha'
+            ylabel = 'Captura (Kg)'
+            title = 'Tendencia Diaria de Capturas'
+            
+        if not data_map:
+             raise exceptions.UserError("No se pudieron agrupar datos válidos para el gráfico.")
+
+        # 3. Crear Gráfico con Matplotlib
+        fig = plt.figure(figsize=(10, 6))
+        ax = fig.add_subplot(111)
+        
+        etiquetas = list(data_map.keys())
+        valores = list(data_map.values())
+        
+        # Colores personalizados
+        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
+
+        if self.report_type in ['by_species', 'by_zone']:
+            bars = ax.bar(etiquetas, valores, color=colors[:len(etiquetas)])
+            ax.bar_label(bars, fmt='%.0f kg') # Etiqueta encima de las barras
+            plt.xticks(rotation=45, ha='right') # Gira etiquetas para que no se superpongan
+            
+        else: # daily_trend
+            ax.plot(etiquetas, valores, marker='o', linestyle='-', color='#1f77b4')
+            plt.xticks(rotation=45, ha='right')
+            ax.grid(True, linestyle='--', alpha=0.7)
+
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
+        
+        # Ajustar layout para que no se corten las etiquetas
+        plt.tight_layout()
+
+        # 4. Guardar en Buffer de Memoria
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=100)
+        buf.seek(0)
+        image_content = buf.getvalue()
+        buf.close()
+        
+        # Limpiar matplotlib para liberar memoria
+        plt.close('all')
+
+        # 5. Escribir en la base de datos
         self.write({
-            'report_image': image_data,
-            'report_filename': filename,
-            'report_data': self._generate_report_data(logs)
+            'report_image': base64.b64encode(image_content),
+            'report_filename': f'reporte_{self.report_type}.png',
+            'report_data': f"Datos procesados: {len(logs)} registros. Total Kg: {sum(valores)}"
         })
 
-        # 5. Retornar una acción para recargar la vista del wizard y mostrar los resultados.
+        # 6. RETORNAR ACCIÓN PARA REFRESCAR LA VISTA
         return {
             'type': 'ir.actions.act_window',
-            'res_model': self._name,
+            'res_model': 'fishing.report.wizard',
             'res_id': self.id,
             'view_mode': 'form',
             'target': 'new',
         }
 
-    def _generate_capture_by_species(self, logs):
-        """Genera un gráfico de torta de capturas por especie."""
-        # Agrupa las capturas por especie.
-        catch_by_species = {}
-        for log in logs:
-            species_name = dict(log._fields['species'].selection).get(log.species, log.species)
-            catch_by_species.setdefault(species_name, 0)
-            catch_by_species[species_name] += log.catch_kg
-
-        # Crea el gráfico con Matplotlib.
-        plt.figure(figsize=(15, 10))
-        if catch_by_species:
-            plt.pie(catch_by_species.values(), labels=list(catch_by_species.keys()), autopct='%1.1f%%', startangle=90)
-            plt.axis('equal')
-            plt.title(f'Distribución de Capturas por Especie\n{self.date_from} - {self.date_to}')
-        else:
-            plt.text(0.5, 0.5, 'No hay datos', ha='center', va='center')
-
-        return self._save_plot_to_binary()
-
-    def _generate_capture_by_zone(self, logs):
-        """Genera un gráfico de barras de capturas por zona."""
-        # Agrupa las capturas por zona.
-        catch_by_zone = {}
-        for log in logs:
-            zone_name = log.zone_id.name if log.zone_id else 'Sin zona'
-            catch_by_zone.setdefault(zone_name, 0)
-            catch_by_zone[zone_name] += log.catch_kg
-
-        # Crea el gráfico de barras.
-        plt.figure(figsize=(12, 6))
-        if catch_by_zone:
-            bars = plt.bar(catch_by_zone.keys(), catch_by_zone.values(), color=plt.cm.viridis(range(len(catch_by_zone))))
-            plt.xlabel('Zona Pesquera')
-            plt.ylabel('Captura Total (Kg)')
-            plt.title(f'Capturas por Zona Pesquera\n{self.date_from} - {self.date_to}')
-            plt.xticks(rotation=45, ha='right')
-            # Añade etiquetas con el valor encima de cada barra.
-            for bar, catch in zip(bars, catch_by_zone.values()):
-                plt.text(bar.get_x() + bar.get_width()/2, bar.get_height(), f'{catch:,.0f}', ha='center', va='bottom')
-        else:
-            plt.text(0.5, 0.5, 'No hay datos', ha='center', va='center')
-
-        plt.tight_layout()
-        return self._save_plot_to_binary()
-
-    def _generate_vessel_activity(self, logs):
-        """Genera un gráfico de barras de actividad (número de reportes) por navío."""
-        activity_by_vessel = {}
-        for log in logs:
-            vessel_name = log.vessel_id.name if log.vessel_id else 'Sin navío'
-            activity_by_vessel.setdefault(vessel_name, 0)
-            activity_by_vessel[vessel_name] += 1
-
-        plt.figure(figsize=(12, 6))
-        if activity_by_vessel:
-            plt.bar(activity_by_vessel.keys(), activity_by_vessel.values(), color=plt.cm.viridis(range(len(activity_by_vessel))))
-            plt.xlabel('Navío')
-            plt.ylabel('Número de Registros de Captura')
-            plt.title(f'Actividad de Navíos\n{self.date_from} - {self.date_to}')
-            plt.xticks(rotation=45, ha='right')
-        else:
-            plt.text(0.5, 0.5, 'No hay datos', ha='center', va='center')
-
-        plt.tight_layout()
-        return self._save_plot_to_binary()
-
-    def _generate_monthly_summary(self, logs):
-        """Genera un gráfico de líneas que muestra la tendencia de capturas por mes."""
-        # Agrupa las capturas por mes (formato 'YYYY-MM').
-        monthly_data = {}
-        for log in logs:
-            month_key = log.date.strftime('%Y-m')
-            monthly_data.setdefault(month_key, 0)
-            monthly_data[month_key] += log.catch_kg
-
-        # Ordena los datos por mes para que el gráfico de línea sea coherente.
-        sorted_months = sorted(monthly_data.items())
-        months = [m[0] for m in sorted_months]
-        catches = [m[1] for m in sorted_months]
-
-        plt.figure(figsize=(12, 6))
-        if months:
-            plt.plot(months, catches, marker='o', linewidth=2, markersize=8, color='green')
-            plt.xlabel('Mes')
-            plt.ylabel('Captura Total (Kg)')
-            plt.title(f'Tendencia Mensual de Capturas\n{self.date_from} - {self.date_to}')
-            plt.xticks(rotation=45, ha='right')
-            plt.grid(True, alpha=0.3)
-            for x, y in zip(months, catches):
-                plt.text(x, y, f'{y:,.0f}', ha='center', va='bottom')
-        else:
-            plt.text(0.5, 0.5, 'No hay datos', ha='center', va='center')
-
-        plt.tight_layout()
-        return self._save_plot_to_binary()
-
-    def _generate_report_data(self, logs):
-        """Genera un resumen en texto con los datos clave del reporte."""
-        total_catch = sum(log.catch_kg for log in logs)
-        avg_catch = total_catch / len(logs) if logs else 0
-
-        # Construye el texto del resumen.
-        data = f"""
-        RESUMEN DEL REPORTE
-        Período: {self.date_from} - {self.date_to}
-        Total registros: {len(logs)}
-        Captura total: {total_catch:,.2f} Kg
-        Captura promedio: {avg_catch:,.2f} Kg
-        Zona: {self.zone_id.name if self.zone_id else 'Todas'}
-        Especie: {dict(self._fields['species'].selection).get(self.species, 'Todas')}
-
-        DETALLE POR ESPECIE:
-        """
-
-        # Agrega un desglose de capturas por especie.
-        by_species = {}
-        for log in logs:
-            by_species.setdefault(log.species, {'count': 0, 'total': 0})
-            by_species[log.species]['count'] += 1
-            by_species[log.species]['total'] += log.catch_kg
-
-        for species, data_dict in by_species.items():
-            species_name = dict(self._fields['species'].selection).get(species, species)
-            data += f"\n  {species_name}: {data_dict['total']:,.2f} Kg ({data_dict['count']} registros)"
-
-        return data
-
-    def _save_plot_to_binary(self):
-        """Método auxiliar para guardar el gráfico de Matplotlib en un buffer
-        y convertirlo a formato binario (base64) para almacenarlo en Odoo.
-        """
-        buffer = io.BytesIO()
-        plt.savefig(buffer, format='png', dpi=150, bbox_inches='tight')
-        buffer.seek(0)
-        image_data = base64.b64encode(buffer.read())
-        plt.close()  # Cierra la figura para liberar memoria.
-        return image_data
-
-    def download_report(self):
-        """Acción para descargar la imagen del reporte generada."""
+    def action_download_report(self):
+        """Permite descargar la imagen generada."""
         self.ensure_one()
-
-        if not self.report_image:
-            raise exceptions.UserError('Primero debe generar el reporte.')
-
-        # Retorna una acción de URL que fuerza la descarga del archivo.
         return {
             'type': 'ir.actions.act_url',
-            'url': f'/web/content/fishing.report.wizard/{self.id}/report_image/{self.report_filename}?download=true',
+            'url': f'/web/content?model=fishing.report.wizard&id={self.id}&field=report_image&download=true&filename={self.report_filename}',
             'target': 'self',
+        }
+    
+    def action_test_chart(self):
+        """Genera un gráfico de prueba simple sin leer la BD."""
+        fig = plt.figure(figsize=(6, 4))
+        plt.plot([1, 2, 3, 4], [10, 20, 25, 30], label='Prueba')
+        plt.title("Gráfico de Prueba")
+        plt.legend()
+        
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        buf.seek(0)
+        content = buf.getvalue()
+        buf.close()
+        plt.close('all')
+        
+        self.write({
+            'report_image': base64.b64encode(content),
+            'report_filename': 'test.png',
+            'report_data': 'Gráfico de prueba generado.'
+        })
+        
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'fishing.report.wizard',
+            'res_id': self.id,
+            'view_mode': 'form',
+            'target': 'new',
         }

@@ -2,6 +2,13 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_fishing_vessel,fishing.vessel,model_fishing_vessel,base.group_user,1,1,1,1
 access_fishing_zone,fishing.zone,model_fishing_zone,base.group_user,1,1,1,1
 access_fishing_shoal,fishing.shoal,model_fishing_shoal,base.group_user,1,1,1,1
-access_fishing_zone_log,fishing.zone.log,model_fishing_zone_log,base.group_system,1,1,1,1
-access_fishing_capture_wizard,fishing.capture.wizard,model_fishing_capture_wizard,base.group_system,1,1,1,1
+access_fishing_zone_log,fishing.zone.log,model_fishing_zone_log,base.group_user,1,1,1,1
+access_fishing_vessel_log,fishing.vessel.log,model_fishing_vessel_log,base.group_user,1,1,1,1
+access_fishing_capture_wizard,fishing.capture.wizard,model_fishing_capture_wizard,base.group_user,1,1,1,1
+access_fishing_checkpoint_wizard,fishing.checkpoint.wizard,model_fishing_checkpoint_wizard,base.group_user,1,1,1,1
+access_fishing_fuel_wizard,fishing.fuel.wizard,model_fishing_fuel_wizard,base.group_user,1,1,1,1
+access_fishing_supplies_wizard,fishing.supplies.wizard,model_fishing_supplies_wizard,base.group_user,1,1,1,1
+access_fishing_crew_wizard,fishing.crew.wizard,model_fishing_crew_wizard,base.group_user,1,1,1,1
+access_fishing_inspection_wizard,fishing.inspection.wizard,model_fishing_inspection_wizard,base.group_user,1,1,1,1
+access_fishing_emergency_wizard,fishing.emergency.wizard,model_fishing_emergency_wizard,base.group_user,1,1,1,1
 access_fishing_report_wizard,fishing.report.wizard,model_fishing_report_wizard,base.group_user,1,1,1,1
