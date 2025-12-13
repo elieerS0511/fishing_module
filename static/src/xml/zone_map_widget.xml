@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="pesca2.ZoneMapWidget" owl="1">
+        <div t-ref="mapContainer" class="o_zone_map_widget" style="height: 500px; width: 100%;" />
+    </t>
+</templates>

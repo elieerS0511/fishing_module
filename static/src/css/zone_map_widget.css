@@ -1,0 +1,56 @@
+.o_zone_map_widget {
+    border: 1px solid #ccc; /* Borde para ver el contenedor si falla el mapa */
+    height: 10px;
+    width: 100px;
+    padding: 500px;
+    }
+    /* Estilos para reportes */
+.oe_report_image {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 5px;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin: 10px 0;
+}
+
+.oe_report_image:hover {
+    border-color: #007bff;
+    box-shadow: 0 4px 8px rgba(0,123,255,0.2);
+}
+
+.oe_report_info {
+    font-size: 12px;
+    color: #6c757d;
+    text-align: center;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+.oe_chart {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.alert-info {
+    padding: 15px;
+    margin: 15px 0;
+    border: 1px solid #b8daff;
+    border-radius: 4px;
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+/* Botón de prueba */
+.btn-test {
+    background-color: #6f42c1;
+    border-color: #6f42c1;
+    color: white;
+}
+
+.btn-test:hover {
+    background-color: #5a32a3;
+    border-color: #5a32a3;
+}

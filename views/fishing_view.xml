@@ -1,19 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <!-- ================================================================== -->
-    <!-- Wizards (Asistentes)                                                 -->
-    <!-- ================================================================== -->
-    <!-- Define las acciones y vistas para las ventanas emergentes (wizards) que guían al usuario en tareas específicas. -->
-
-    <!-- Wizard para reportar captura -->
-    <!-- Acción de ventana que abre el wizard para registrar una captura. -->
     <record id="action_fishing_capture_wizard" model="ir.actions.act_window">
         <field name="name">Reportar Captura</field>
         <field name="res_model">fishing.capture.wizard</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
     </record>
-
-    <!-- Vista de formulario para el wizard de captura. -->
+    
     <record id="view_fishing_capture_wizard_form" model="ir.ui.view">
         <field name="name">fishing.capture.wizard.form</field>
         <field name="model">fishing.capture.wizard</field>
@@ -36,8 +29,6 @@
         </field>
     </record>
 
-    <!-- Wizard para reportes gráficos -->
-    <!-- Vista de formulario para el wizard de generación de reportes. -->
     <record id="view_fishing_report_wizard_form" model="ir.ui.view">
         <field name="name">fishing.report.wizard.form</field>
         <field name="model">fishing.report.wizard</field>
@@ -46,24 +37,32 @@
                 <sheet>
                     <div class="container">
                         <div class="row">
-                        <div class="col">
-                            <!-- Sección de filtros para el reporte -->
-                            <group string="Parámetros del Reporte">
-                            <field name="date_from"/>
-                            <field name="date_to"/>
-                            <field name="zone_id"/>
-                            <field name="species"/>
-                            <field name="report_type"/>
-                            </group>
-                        </div>
+                            <div class="col">
+                                <group string="Parámetros del Reporte">
+                                    <field name="date_from"/>
+                                    <field name="date_to"/>
+                                    <field name="zone_id"/>
+                                    <field name="species"/>
+                                    <field name="report_type"/>
+                                </group>
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col">
-                                <!-- Sección donde se muestran los resultados (datos y gráfico) -->
                                 <group string="Resultado">
-                                <field name="report_filename"/>
-                                <field name="report_data" widget="text" nolabel="1"/>
-                                <field name="report_image" widget="image" nolabel="1"/>
+                                    <field name="report_filename"/>
+                                    <field name="report_data" widget="text" nolabel="1"/>
+                                    
+                                    <field name="report_image" widget="image" 
+                                           class="oe_report_image" 
+                                           options="{'zoom': true}" 
+                                           nolabel="1"
+                                           groups="base.group_user"
+                                           invisible="not report_image"/>
+                                    
+                                    <div class="alert alert-info" invisible="report_image">
+                                        <strong>Información:</strong> Genere el reporte para ver el gráfico.
+                                    </div>
                                 </group>
                             </div>
                         </div>
@@ -71,14 +70,18 @@
                 </sheet>
                 <footer>
                     <button name="generate_report" string="Generar Gráfico" type="object" class="oe_highlight"/>
-                    <button name="download_report" string="Descargar Imagen" type="object"/>
-                    <button string="Cancelar" class="btn-secondary" special="cancel"/>
+                    <button name="action_download_report" 
+                            string="Descargar Imagen" 
+                            type="object"
+                            class="oe_highlight"
+                            invisible="not report_image"/>
+                    
+                    <button string="Cerrar" class="btn-secondary" special="cancel"/>
                 </footer>
             </form>
         </field>
     </record>
 
-    <!-- Acción de ventana que abre el wizard de reportes. -->
     <record id="action_fishing_report_wizard" model="ir.actions.act_window">
         <field name="name">Reportes Gráficos</field>
         <field name="res_model">fishing.report.wizard</field>
@@ -86,27 +89,53 @@
         <field name="target">new</field>
     </record>
 
+    <record id="view_fishing_vessel_log_list" model="ir.ui.view">
+        <field name="name">fishing.vessel.log.list</field>
+        <field name="model">fishing.vessel.log</field>
+        <field name="arch" type="xml">
+            <list string="Bitácora de Navíos">
+                <field name="vessel_name" string="Navío"/>
+                <field name="log_date" string="Fecha/Hora"/>
+                <field name="log_type" string="Tipo de Evento"/>
+                <field name="zone_name" string="Zona"/>
+                <field name="species" string="Especie"/>
+                <field name="catch_kg" string="Captura (Kg)"/>
+                <field name="notes" string="Notas"/>
+            </list>
+        </field>
+    </record>
 
-    <!-- ================================================================== -->
-    <!-- Vistas de Modelos Principales                                      -->
-    <!-- ================================================================== -->
-    <!-- Define cómo se muestran los datos de los modelos principales (navíos, zonas, etc.) en la interfaz de usuario. -->
-
-    <!-- Vista de Formulario de Navío (fishing.vessel) -->
     <record id="view_fishing_vessel_form" model="ir.ui.view">
         <field name="name">fishing.vessel.form</field>
         <field name="model">fishing.vessel</field>
         <field name="arch" type="xml">
             <form>
-                <!-- Cabecera con el estado y el botón para reportar captura. -->
                 <header>
                     <field name="state" widget="statusbar" options="{'clickable': '1'}"/>
-                    <!-- El botón solo es visible si el estado del navío es 'En Faena' (fishing). -->
-                    <button name="%(action_fishing_capture_wizard)d"
-                        string="Reportar Captura"
-                        type="action"
-                        class="oe_highlight"
-                        invisible="state != 'fishing'"/>
+    
+                    <button name="%(action_fishing_capture_wizard)d" 
+                            string="Reportar Captura" 
+                            type="action" 
+                            class="oe_highlight" 
+                            invisible="state != 'fishing'"/> 
+                    
+                    <button name="action_register_checkpoint" 
+                            string="Punto Control" 
+                            type="object" 
+                            class="oe_highlight"
+                            invisible="state != 'fishing'"/>
+                    
+                    <button name="action_register_departure" 
+                            string="Zarpe" 
+                            type="object" 
+                            class="oe_highlight"
+                            invisible="state != 'docked'"/>
+                        
+                    <button name="action_register_arrival" 
+                            string="Arribo" 
+                            type="object" 
+                            class="oe_highlight"
+                            invisible="state == 'docked'"/>
                 </header>
                 <sheet>
                     <field name="image" widget="image" class="oe_avatar"/>
@@ -125,33 +154,90 @@
                             <field name="last_departure_datetime"/>
                             <label for="current_latitude" string="Coordenadas GPS"/>
                             <div class="o_row">
-                                <field name="current_latitude" placeholder="Lat"/> /
+                                <field name="current_latitude" placeholder="Lat"/> / 
                                 <field name="current_longitude" placeholder="Long"/>
                             </div>
                         </group>
                     </group>
+                    
+                    <notebook>
+                        <page string="Bitácora">
+                            <field name="vessel_log_ids">
+                                <list>
+                                    <field name="log_date" string="Fecha/Hora"/>
+                                    <field name="log_type" string="Tipo"/>
+                                    <field name="zone_id" string="Zona"/>
+                                    <field name="species" string="Especie"/>
+                                    <field name="catch_kg" string="Kg"/>
+                                    <field name="notes" string="Notas"/>
+                                </list>
+                            </field>
+                        </page>
+                        
+                        <page string="Operaciones">
+                            <group>
+                                <group>
+                                    <button name="action_start_maintenance" 
+                                            string="Iniciar Mantenimiento" 
+                                            type="object" 
+                                            class="btn-warning"
+                                            invisible="state != 'docked'"/>
+                                            
+                                    <button name="action_end_maintenance" 
+                                            string="Finalizar Mantenimiento" 
+                                            type="object" 
+                                            class="btn-warning"
+                                            invisible="state != 'maintenance'"/>
+                                </group>
+                                <group>
+                                    <button name="action_register_fuel_loading" 
+                                            string="Carga Combustible" 
+                                            type="object" 
+                                            class="btn-primary"/>
+                                            
+                                    <button name="action_register_supplies" 
+                                            string="Carga Provisiones" 
+                                            type="object" 
+                                            class="btn-primary"/>
+                                </group>
+                                <group>
+                                    <button name="action_register_crew_change" 
+                                            string="Cambio Tripulación" 
+                                            type="object" 
+                                            class="btn-info"/>
+                                            
+                                    <button name="action_register_inspection" 
+                                            string="Registrar Inspección" 
+                                            type="object" 
+                                            class="btn-warning"/>
+                                </group>
+                                <group>
+                                    <button name="action_register_emergency" 
+                                            string="EMERGENCIA" 
+                                            type="object" 
+                                            class="btn-danger"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>
     </record>
 
-    <!-- Vista de Lista de Navío (fishing.vessel) -->
     <record id="view_fishing_vessel_list" model="ir.ui.view">
         <field name="name">fishing.vessel.list</field>
         <field name="model">fishing.vessel</field>
         <field name="arch" type="xml">
-            <!-- Colorea las filas según el estado del navío para una rápida identificación. -->
             <list decoration-info="state == 'fishing'" decoration-danger="state == 'maintenance'">
                 <field name="name"/>
-                <field name="current_zone_id" optional="show"/>
+                <field name="current_zone_id"/>
                 <field name="captain_id"/>
-                <field name="last_departure_datetime" optional="hide"/>
                 <field name="state" widget="badge"/>
             </list>
         </field>
     </record>
 
-    <!-- Vista de Formulario de Zona (fishing.zone) -->
     <record id="view_fishing_zone_form" model="ir.ui.view">
         <field name="name">fishing.zone.form</field>
         <field name="model">fishing.zone</field>
@@ -171,9 +257,11 @@
                             <field name="longitude"/>
                         </group>
                     </group>
-                    <!-- Pestañas para mostrar información relacionada -->
+
+                    <separator string="Ubicación en el Mapa"/>
+                    <field name="latitude" widget="zone_leaflet_map" nolabel="1" options="{'other_fields': ['longitude']}"/>
+                    
                     <notebook>
-                        <!-- Pestaña para ver los navíos actualmente en esta zona. -->
                         <page string="Navíos en la Zona">
                             <field name="vessel_ids" readonly="1">
                                 <list>
@@ -184,15 +272,14 @@
                                 </list>
                             </field>
                         </page>
-                        <!-- Pestaña para ver el historial de actividades en esta zona. -->
-                        <page string="Bitácora de Operaciones">
+                        <page string="Bitácora">
                             <field name="log_ids" readonly="1">
-                                <list editable="bottom">
+                                <list>
                                     <field name="date"/>
                                     <field name="vessel_id"/>
                                     <field name="activity_type"/>
                                     <field name="species"/>
-                                    <field name="catch_kg" sum="Total Kilos"/>
+                                    <field name="catch_kg"/>
                                 </list>
                             </field>
                         </page>
@@ -201,12 +288,6 @@
             </form>
         </field>
     </record>
-
-
-    <!-- ================================================================== -->
-    <!-- Acciones de Ventana (Window Actions)                               -->
-    <!-- ================================================================== -->
-    <!-- Definen cómo se abren las vistas de los modelos (listas, formularios). Son el objetivo de los elementos del menú. -->
 
     <record id="action_fishing_vessel" model="ir.actions.act_window">
         <field name="name">Navíos</field>
@@ -226,18 +307,19 @@
         <field name="view_mode">list,form</field>
     </record>
 
+    <record id="action_fishing_vessel_log" model="ir.actions.act_window">
+        <field name="name">Bitácora de Navíos</field>
+        <field name="res_model">fishing.vessel.log</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[]</field>
+        <field name="view_id" ref="view_fishing_vessel_log_list"/>
+    </record>
 
-    <!-- ================================================================== -->
-    <!-- Menús                                                              -->
-    <!-- ================================================================== -->
-    <!-- Define la estructura de navegación del módulo en la interfaz de Odoo. -->
-
-    <!-- Menú raíz del módulo -->
     <menuitem id="menu_fishing_root" name="Pesca2" web_icon="fishing_management,static/description/icon.png"/>
-
-    <!-- Elementos del menú principal -->
+    
     <menuitem id="menu_shoal" name="Cardúmenes" parent="menu_fishing_root" sequence="10" action="action_fishing_shoal"/>
     <menuitem id="menu_vessel" name="Navíos" parent="menu_fishing_root" sequence="20" action="action_fishing_vessel"/>
     <menuitem id="menu_zone" name="Zonas Pesqueras" parent="menu_fishing_root" sequence="30" action="action_fishing_zone"/>
+    <menuitem id="menu_vessel_log" name="Bitácora" parent="menu_fishing_root" sequence="35" action="action_fishing_vessel_log"/>
     <menuitem id="menu_report" name="Reportes" parent="menu_fishing_root" sequence="40" action="action_fishing_report_wizard"/>
 </odoo>
