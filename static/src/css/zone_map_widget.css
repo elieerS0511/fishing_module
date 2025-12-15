@@ -1,56 +1,277 @@
+/*
+   SECCIÓN 1: ESTILOS PARA EL WIDGET DE MAPA
+SELECTOR: .o_zone_map_widget
+Aplica estilos al contenedor principal del widget de mapa
+*/
 .o_zone_map_widget {
-    border: 1px solid #ccc; /* Borde para ver el contenedor si falla el mapa */
-    height: 10px;
-    width: 100px;
+    /* 
+    border: 1px solid #ccc;
+    - Agrega un borde gris claro de 1 píxel
+    - Proporciona un contorno visible si el mapa falla al cargar
+    - Ayuda a visualizar los límites del contenedor durante el desarrollo
+    */
+    border: 1px solid #ccc;
+    /* 
+    height: 500px;
+    - Altura de 500 píxeles
+    */
+    height: 500px;
+    /* 
+    width: 100%;
+    - Ancho de 100% 
+    */
+    width: 100%;
+    /* 
     padding: 500px;
-    }
-    /* Estilos para reportes */
+    - Padding de 500 píxeles*/
+    padding: 500px;
+}
+/*  SECCIÓN 2: ESTILOS PARA IMÁGENES DE REPORTES */
+/* 
+SELECTOR: .oe_report_image
+Aplica estilos a las imágenes de reportes generados (gráficos PNG)
+*/
 .oe_report_image {
+    /* 
     max-width: 100%;
+    - La imagen nunca será más ancha que su contenedor
+    - Se escala proporcionalmente si es necesario
+    - Previene que imágenes grandes desborden el layout
+    */
+    max-width: 100%;
+    /* 
     height: auto;
+    - Mantiene la proporción original de la imagen
+    - Se calcula automáticamente basado en el ancho
+    - Evita distorsión de la imagen
+    */
+    height: auto;
+    /* 
     border: 1px solid #ddd;
+    - Borde gris claro (ddd = #dddddd)
+    - Delinea la imagen para separarla del fondo
+    - 1px es lo suficientemente fino para no distraer
+    */
+    border: 1px solid #ddd;
+    /* 
     border-radius: 4px;
+    - Esquinas redondeadas con radio de 4 píxeles
+    - Da un aspecto más moderno y suave
+    - Mejora la estética visual
+    */
+    border-radius: 4px;
+    /* 
     padding: 5px;
+    - Espacio interno de 5 píxeles entre la imagen y el borde
+    - Da "respiración" a la imagen dentro de su contenedor
+    */
+    padding: 5px;
+    /* 
     background-color: white;
+    - Fondo blanco detrás de la imagen
+    - Asegura buen contraste incluso en fondos oscuros
+    - Previene transparencias no deseadas
+    */
+    background-color: white;
+    /* 
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    - Sombra sutil debajo de la imagen
+    - 0: Desplazamiento horizontal (ninguno)
+    - 2px: Desplazamiento vertical hacia abajo
+    - 4px: Desenfoque de la sombra
+    - rgba(0,0,0,0.1): Color negro con 10% de opacidad
+    - Da profundidad y separación visual del fondo
+    */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    /* 
+    margin: 10px 0;
+    - Margen vertical de 10 píxeles arriba y abajo
+    - margin-top: 10px; margin-bottom: 10px;
+    - Separa la imagen de otros elementos verticalmente
+    - No tiene margen horizontal (0 izquierda/derecha)
+    */
     margin: 10px 0;
 }
-
+/* 
+SELECTOR: .oe_report_image:hover
+Estilos aplicados cuando el usuario pasa el mouse sobre la imagen
+Proporciona feedback visual interactivo
+*/
 .oe_report_image:hover {
+    /* 
     border-color: #007bff;
+    - Cambia el color del borde a azul primario de Bootstrap
+    - #007bff es un azul vibrante pero profesional
+    - Indica que el elemento es interactivo o está activo
+    */
+    border-color: #007bff;   
+    /* 
+    box-shadow: 0 4px 8px rgba(0,123,255,0.2);
+    - Incrementa la sombra al pasar el mouse
+    - 4px de desplazamiento vertical (antes 2px)
+    - 8px de desenfoque (antes 4px)
+    - rgba(0,123,255,0.2): Azul con 20% de opacidad
+    - Crea efecto de "elevación" o "hover"
+    */
     box-shadow: 0 4px 8px rgba(0,123,255,0.2);
 }
 
+/*   SECCIÓN 3: ESTILOS PARA TEXTO INFORMATIVO */
+/* 
+SELECTOR: .oe_report_info
+Aplica estilos al texto informativo que acompaña los reportes
+*/
 .oe_report_info {
+    /* 
     font-size: 12px;
+    - Tamaño de fuente pequeño (12 píxeles)
+    - Adecuado para texto secundario o informativo
+    - No compite visualmente con el contenido principal
+    */
+    font-size: 12px;
+    /* 
     color: #6c757d;
+    - Color gris de Bootstrap para texto secundario
+    - #6c757d es un gris que es legible pero no dominante
+    - Indica visualmente que es información de soporte, no primaria
+    */
+    color: #6c757d;
+    /* 
     text-align: center;
+    - Centra el texto horizontalmente
+    - Alineación apropiada para mensajes informativos
+    */
+    text-align: center;
+    /* 
     margin-top: 5px;
+    - Margen superior de 5 píxeles
+    - Separa el texto de la imagen que está arriba
+    */
+    margin-top: 5px;
+    /* 
+    font-style: italic;
+    - Texto en cursiva (itálica)
+    - Da énfasis sutil al texto
+    - Convención para texto informativo o de ayuda
+    */
     font-style: italic;
 }
-
+/*    SECCIÓN 4: ESTILOS PARA CONTENEDORES DE GRÁFICOS */
+/* 
+SELECTOR: .oe_chart
+Aplica estilos a contenedores de gráficos o elementos chart
+*/
 .oe_chart {
+    /* 
     text-align: center;
+    - Centra el contenido horizontalmente
+    - Útil para gráficos que deben estar centrados en la página
+    */
+    text-align: center;
+    /* 
+    margin: 20px 0;
+    - Margen vertical de 20 píxeles arriba y abajo
+    - Da suficiente espacio alrededor del gráfico
+    - Separa visualmente de otros elementos de contenido
+    */
     margin: 20px 0;
 }
-
+/*SECCIÓN 5: ESTILOS PARA ALERTAS INFORMATIVAS */
+/* 
+SELECTOR: .alert-info
+Estilo para alertas informativas (como el mensaje "Genere el reporte...")
+Basado en las clases de alerta de Bootstrap
+*/
 .alert-info {
+    /* 
     padding: 15px;
+    - Espacio interno de 15 píxeles en todos los lados
+    - Da "aire" al texto dentro de la alerta
+    - Hace la alerta más fácil de leer
+    */
+    padding: 15px;
+    /* 
     margin: 15px 0;
+    - Margen vertical de 15 píxeles arriba y abajo
+    - Separa la alerta de otros elementos del formulario
+    */
+    margin: 15px 0;
+    /* 
     border: 1px solid #b8daff;
+    - Borde azul claro (#b8daff = RGB 184, 218, 255)
+    - Color consistente con el tema "info" de Bootstrap
+    - Delimita visualmente el área de la alerta
+    */
+    border: 1px solid #b8daff;
+    /* 
     border-radius: 4px;
+    - Esquinas ligeramente redondeadas (4px)
+    - Suaviza la apariencia del rectángulo
+    - Estética moderna y amigable
+    */
+    border-radius: 4px;
+    /* 
     background-color: #d1ecf1;
+    - Fondo azul muy claro (#d1ecf1 = RGB 209, 236, 241)
+    - Color de fondo para alertas informativas en Bootstrap
+    - Proporciona contraste suficiente para legibilidad
+    */
+    background-color: #d1ecf1;
+    /* 
+    color: #0c5460;
+    - Color de texto azul oscuro (#0c5460)
+    - Contrasta bien con el fondo azul claro
+    - Mantiene la jerarquía de color "info"
+    */
     color: #0c5460;
 }
-
-/* Botón de prueba */
+/* SECCIÓN 6: ESTILOS PARA BOTONES DE PRUEBA (TEST) */
+/* 
+SELECTOR: .btn-test
+Estilos para botones de prueba (probablemente usados durante desarrollo)
+Color morado distintivo para diferenciarlos de botones de producción
+*/
 .btn-test {
+    /* 
     background-color: #6f42c1;
+    - Color de fondo morado (#6f42c1)
+    - Morado de Bootstrap para indicar funcionalidad especial
+    - Distinto de los colores estándar (azul, verde, rojo)
+    */
+    background-color: #6f42c1; 
+    /* 
     border-color: #6f42c1;
+    - Color del borde igual al fondo
+    - Crea apariencia sólida sin borde visible
+    - Coherencia visual
+    */
+    border-color: #6f42c1;
+    /* 
+    color: white;
+    - Texto en color blanco
+    - Alto contraste sobre fondo morado
+    - Máxima legibilidad
+    */
     color: white;
 }
-
+/* 
+SELECTOR: .btn-test:hover
+Estilos aplicados cuando el usuario pasa el mouse sobre el botón de prueba
+Proporciona feedback visual de interacción
+*/
 .btn-test:hover {
+    /* 
     background-color: #5a32a3;
+    - Color de fondo morado más oscuro al hacer hover
+    - #5a32a3 es una versión más oscura de #6f42c1
+    - Efecto visual común en botones al interactuar
+    */
+    background-color: #5a32a3;
+    
+    /* 
+    border-color: #5a32a3;
+    - Color del borde igual al nuevo fondo
+    - Mantiene consistencia visual
+    */
     border-color: #5a32a3;
 }
