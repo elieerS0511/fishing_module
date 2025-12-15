@@ -1,65 +1,193 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
+    <!-- SECCIÓN 1: ACCIÓN Y VISTA DEL WIZARD DE CAPTURA
+    ACCIÓN DE VENTANA PARA EL WIZARD DE CAPTURA
+    Define cómo se abre el wizard para reportar capturas de pesca.
+    -->
     <record id="action_fishing_capture_wizard" model="ir.actions.act_window">
+        <!-- Nombre que se muestra en la interfaz -->
         <field name="name">Reportar Captura</field>
+        <!-- Modelo transitorio (wizard) que se utilizará -->
         <field name="res_model">fishing.capture.wizard</field>
+        <!-- Solo se mostrará en modo formulario (no lista) -->
         <field name="view_mode">form</field>
+        <!-- Se abre en una ventana nueva emergente (pop-up) -->
         <field name="target">new</field>
     </record>
-    
+    <!-- 
+    VISTA DEL FORMULARIO DEL WIZARD DE CAPTURA
+    Define la interfaz visual del wizard para reportar capturas.
+    -->
     <record id="view_fishing_capture_wizard_form" model="ir.ui.view">
         <field name="name">fishing.capture.wizard.form</field>
         <field name="model">fishing.capture.wizard</field>
+        <!-- 
+        ESTRUCTURA DEL FORMULARIO
+        Arch define la estructura XML del formulario visual
+        -->
         <field name="arch" type="xml">
+            <!-- 
+            FORMULARIO PRINCIPAL
+            string: Título que aparece en la barra superior de la ventana
+            -->
             <form string="Reporte de Captura">
+                <!-- 
+                SECCIÓN DE INSTRUCCIONES
+                Div con clase oe_grey para fondo gris y texto informativo
+                -->
                 <div class="oe_grey">
                     <p>Registre la captura realizada. La zona de reporte se sugiere de la ubicación actual del navío.</p>
-                </div>
+                </div>   
+                <!-- 
+                GRUPO DE CAMPOS PARA INGRESAR DATOS
+                Agrupa campos relacionados visualmente
+                -->
                 <group>
+                    <!-- 
+                    CAMPO: NAVÍO (SOLO LECTURA)
+                    readonly="1": El usuario no puede modificar este campo
+                    Se toma automáticamente del contexto (navío activo)
+                    -->
                     <field name="vessel_id" readonly="1"/>
+                    <!-- 
+                    CAMPO: ZONA DE REPORTE (REQUERIDA)
+                    required="1": El usuario debe seleccionar una zona
+                    Se sugiere automáticamente pero se puede cambiar
+                    -->
                     <field name="current_zone_id" required="1"/>
+                    <!-- 
+                    CAMPO: ESPECIE CAPTURADA
+                    Selección de lista desplegable con especies de peces
+                    -->
                     <field name="species"/>
+                    <!-- 
+                    CAMPO: CANTIDAD CAPTURADA EN KILOGRAMOS
+                    Campo numérico para ingresar el peso de la captura
+                    -->
                     <field name="catch_kg"/>
                 </group>
+                <!-- 
+                PIE DE PÁGINA CON BOTONES DE ACCIÓN
+                Contiene los botones para ejecutar acciones o cancelar
+                -->
                 <footer>
+                    <!-- 
+                    BOTÓN: REGISTRAR BITÁCORA
+                    name="action_register_capture": Llama a este método en el modelo Python
+                    type="object": Es un botón que ejecuta un método del modelo
+                    class="oe_highlight": Estilo visual destacado (normalmente verde/azul)
+                    Este botón ejecuta el registro de la captura en ambas bitácoras
+                    -->
                     <button name="action_register_capture" string="Registrar Bitácora" type="object" class="oe_highlight"/>
+                    <!-- 
+                    BOTÓN: CANCELAR
+                    special="cancel": Comportamiento estándar de Odoo para cerrar wizard
+                    class="btn-secondary": Estilo visual secundario (normalmente gris)
+                    Cierra el wizard sin guardar cambios
+                    -->
                     <button string="Cancelar" class="btn-secondary" special="cancel"/>
                 </footer>
             </form>
         </field>
     </record>
-
+    <!-- SECCIÓN 2: WIZARD DE REPORTES GRÁFICOS 
+    VISTA DEL FORMULARIO DEL WIZARD DE REPORTES GRÁFICOS
+    Define la interfaz para generar reportes visuales de capturas
+    -->
     <record id="view_fishing_report_wizard_form" model="ir.ui.view">
         <field name="name">fishing.report.wizard.form</field>
         <field name="model">fishing.report.wizard</field>
         <field name="arch" type="xml">
+            <!-- 
+            FORMULARIO CON ESTRUCTURA DE HOJA (SHEET)
+            Sheet proporciona un diseño más estructurado con contenedores
+            -->
             <form string="Generar Reporte Gráfico">
                 <sheet>
+                    <!-- 
+                    CONTENEDOR PRINCIPAL CON SISTEMA DE GRID
+                    Utiliza clases Bootstrap-like para disposición responsive
+                    -->
                     <div class="container">
+                        <!-- 
+                        FILA 1: PARÁMETROS DEL REPORTE
+                        Contiene los campos de filtro para el reporte
+                        -->
                         <div class="row">
                             <div class="col">
+                                <!-- 
+                                GRUPO DE PARÁMETROS
+                                string: Título del grupo de campos
+                                -->
                                 <group string="Parámetros del Reporte">
+                                    <!-- 
+                                    CAMPO: FECHA DESDE
+                                    Permite seleccionar fecha inicial para filtrar
+                                    -->
                                     <field name="date_from"/>
+                                    <!-- 
+                                    CAMPO: FECHA HASTA
+                                    Permite seleccionar fecha final para filtrar
+                                    -->
                                     <field name="date_to"/>
+                                    <!-- 
+                                    CAMPO: ZONA ESPECÍFICA (OPCIONAL)
+                                    Many2one para seleccionar una zona específica
+                                    Si está vacío, incluye todas las zonas
+                                    -->
                                     <field name="zone_id"/>
+                                    <!-- 
+                                    CAMPO: ESPECIE (OPCIONAL)
+                                    Filtra por especie específica de pez
+                                    -->
                                     <field name="species"/>
+                                    <!-- 
+                                    CAMPO: TIPO DE REPORTE
+                                    Selección entre: por especie, por zona, o tendencia diaria
+                                    required="1": El usuario debe seleccionar un tipo
+                                    -->
                                     <field name="report_type"/>
                                 </group>
                             </div>
                         </div>
+                        <!-- 
+                        FILA 2: RESULTADOS DEL REPORTE
+                        Muestra los resultados después de generar el reporte
+                        -->
                         <div class="row">
                             <div class="col">
                                 <group string="Resultado">
-                                    <field name="report_filename"/>
+                                    <!-- 
+                                    CAMPO: NOMBRE DEL ARCHIVO GENERADO
+                                    Muestra el nombre del archivo PNG creado
+                                    -->
+                                    <field name="report_filename"/>      
+                                    <!-- 
+                                    CAMPO: DATOS RESUMIDOS EN TEXTO
+                                    widget="text": Muestra como texto multilínea
+                                    nolabel="1": No muestra etiqueta "Datos Resumidos"
+                                    readonly="1": Solo lectura (se llena automáticamente)
+                                    -->
                                     <field name="report_data" widget="text" nolabel="1"/>
-                                    
+                                    <!-- 
+                                    CAMPO: IMAGEN DEL GRÁFICO GENERADO
+                                    widget="image": Muestra la imagen como vista previa
+                                    class="oe_report_image": Clase CSS para estilizar
+                                    options="{'zoom': true}": Permite hacer zoom al hacer clic
+                                    nolabel="1": Sin etiqueta 
+                                    groups="base.group_user": Solo visible para usuarios autenticados
+                                    invisible="not report_image": Se oculta si no hay imagen cargada
+                                    -->
                                     <field name="report_image" widget="image" 
                                            class="oe_report_image" 
-                                           options="{'zoom': true}" 
                                            nolabel="1"
                                            groups="base.group_user"
                                            invisible="not report_image"/>
-                                    
+                                    <!-- 
+                                    MENSAJE INFORMATIVO CUANDO NO HAY GRÁFICO
+                                    invisible="report_image": Solo visible cuando NO hay imagen
+                                    Muestra instrucciones al usuario
+                                    -->
                                     <div class="alert alert-info" invisible="report_image">
                                         <strong>Información:</strong> Genere el reporte para ver el gráfico.
                                     </div>
@@ -68,150 +196,368 @@
                         </div>
                     </div>
                 </sheet>
+                <!-- 
+                PIE DE PÁGINA CON BOTONES DE ACCIÓN
+                Contiene botones para generar, descargar y cerrar
+                -->
                 <footer>
+                    <!-- 
+                    BOTÓN: GENERAR GRÁFICO
+                    name="generate_report": Ejecuta el método generate_report en Python
+                    type="object": Botón que llama a método del modelo
+                    class="oe_highlight": Estilo destacado
+                    -->
                     <button name="generate_report" string="Generar Gráfico" type="object" class="oe_highlight"/>
+                    <!-- 
+                    BOTÓN: DESCARGAR IMAGEN
+                    name="action_download_report": Ejecuta método para descargar
+                    invisible="not report_image": Solo visible cuando HAY imagen
+                    type="object": Botón que llama a método del modelo
+                    class="oe_highlight": Estilo destacado
+                    -->
                     <button name="action_download_report" 
                             string="Descargar Imagen" 
                             type="object"
                             class="oe_highlight"
                             invisible="not report_image"/>
-                    
+                    <!-- 
+                    BOTÓN: CERRAR WIZARD
+                    special="cancel": Cierra la ventana emergente
+                    class="btn-secondary": Estilo secundario
+                    -->
                     <button string="Cerrar" class="btn-secondary" special="cancel"/>
                 </footer>
             </form>
         </field>
     </record>
-
+    <!-- 
+    ACCIÓN DE VENTANA PARA EL WIZARD DE REPORTES
+    Define cómo se abre el wizard de reportes gráficos desde el menú
+    -->
     <record id="action_fishing_report_wizard" model="ir.actions.act_window">
         <field name="name">Reportes Gráficos</field>
         <field name="res_model">fishing.report.wizard</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
     </record>
-
+    <!-- SECCIÓN 3: VISTA DE LISTA DE BITÁCORA DE NAVÍOS 
+    VISTA DE LISTA PARA REGISTROS DE BITÁCORA
+    Muestra todos los eventos registrados en forma de tabla
+    -->
     <record id="view_fishing_vessel_log_list" model="ir.ui.view">
         <field name="name">fishing.vessel.log.list</field>
         <field name="model">fishing.vessel.log</field>
         <field name="arch" type="xml">
+            <!-- 
+            LISTA PRINCIPAL
+            string: Título que aparece sobre la tabla
+            -->
             <list string="Bitácora de Navíos">
+                <!-- 
+                COLUMNA: NOMBRE DEL NAVÍO
+                Muestra el nombre del navío con su matrícula
+                string: Encabezado de la columna
+                -->
                 <field name="vessel_name" string="Navío"/>
+                <!-- 
+                COLUMNA: FECHA Y HORA DEL EVENTO
+                Muestra cuándo ocurrió el evento
+                -->
                 <field name="log_date" string="Fecha/Hora"/>
+                <!-- 
+                COLUMNA: TIPO DE EVENTO
+                Muestra el tipo de evento (zarpe, captura, mantenimiento, etc.)
+                -->
                 <field name="log_type" string="Tipo de Evento"/>
+                <!-- 
+                COLUMNA: NOMBRE DE LA ZONA
+                Muestra en qué zona ocurrió el evento
+                -->
                 <field name="zone_name" string="Zona"/>
+                <!-- 
+                COLUMNA: ESPECIE CAPTURADA
+                Muestra qué especie se capturó (si aplica)
+                -->
                 <field name="species" string="Especie"/>
+                <!-- 
+                COLUMNA: CANTIDAD CAPTURADA
+                Muestra cuántos kilogramos se capturaron (si aplica)
+                -->
                 <field name="catch_kg" string="Captura (Kg)"/>
+                <!-- 
+                COLUMNA: NOTAS ADICIONALES
+                Muestra comentarios o detalles adicionales del evento
+                -->
                 <field name="notes" string="Notas"/>
             </list>
         </field>
     </record>
-
+    <!-- SECCIÓN 4: VISTA DE FORMULARIO DEL NAVÍO 
+    VISTA PRINCIPAL DEL NAVÍO PESQUERO
+    Interfaz completa con toda la información y operaciones del navío
+    -->
     <record id="view_fishing_vessel_form" model="ir.ui.view">
         <field name="name">fishing.vessel.form</field>
         <field name="model">fishing.vessel</field>
         <field name="arch" type="xml">
             <form>
+                <!-- 
+                ENCABEZADO CON BARRA DE ESTADO Y BOTONES DE ACCIÓN
+                Contiene botones condicionales según el estado del navío
+                -->
                 <header>
+                    <!-- 
+                    BARRA DE ESTADO (STATUSBAR)
+                    widget="statusbar": Muestra el estado actual y permite cambiarlo
+                    options="{'clickable': '1'}": Permite hacer clic para cambiar estado
+                    Muestra: En Muelle → En Faena → Mantenimiento
+                    -->
                     <field name="state" widget="statusbar" options="{'clickable': '1'}"/>
-    
+                    <!-- 
+                    BOTÓN: REPORTAR CAPTURA
+                    name="%(action_fishing_capture_wizard)d": Referencia a la acción definida arriba
+                    type="action": Botón que ejecuta una acción de Odoo
+                    class="oe_highlight": Estilo destacado
+                    invisible="state != 'fishing'": Solo visible cuando el navío está PESCANDO
+                    Abre el wizard para reportar una captura
+                    -->
                     <button name="%(action_fishing_capture_wizard)d" 
                             string="Reportar Captura" 
                             type="action" 
                             class="oe_highlight" 
                             invisible="state != 'fishing'"/> 
-                    
+                    <!-- 
+                    BOTÓN: PUNTO DE CONTROL
+                    name="action_register_checkpoint": Ejecuta método en el modelo Python
+                    type="object": Botón que llama a método del modelo
+                    class="oe_highlight": Estilo destacado
+                    invisible="state != 'fishing'": Solo visible cuando está PESCANDO
+                    Registra la posición GPS actual como punto de control
+                    -->
                     <button name="action_register_checkpoint" 
                             string="Punto Control" 
                             type="object" 
                             class="oe_highlight"
                             invisible="state != 'fishing'"/>
-                    
+                    <!-- 
+                    BOTÓN: ZARPE (SALIR DEL MUELLE)
+                    name="action_register_departure": Ejecuta método en Python
+                    type="object": Botón que llama a método del modelo
+                    class="oe_highlight": Estilo destacado
+                    invisible="state != 'docked'": Solo visible cuando está EN MUELLE
+                    Cambia el estado a "En Faena" y registra el zarpe
+                    -->
                     <button name="action_register_departure" 
                             string="Zarpe" 
                             type="object" 
                             class="oe_highlight"
                             invisible="state != 'docked'"/>
-                        
+                    <!-- 
+                    BOTÓN: ARRIBO (VOLVER AL MUELLE)
+                    name="action_register_arrival": Ejecuta método en Python
+                    type="object": Botón que llama a método del modelo
+                    class="oe_highlight": Estilo destacado
+                    invisible="state == 'docked'": Solo visible cuando NO está en muelle
+                    Cambia el estado a "En Muelle" y registra el arribo
+                    -->
                     <button name="action_register_arrival" 
                             string="Arribo" 
                             type="object" 
                             class="oe_highlight"
                             invisible="state == 'docked'"/>
                 </header>
+                <!-- 
+                CUERPO PRINCIPAL DEL FORMULARIO
+                Sheet organiza el contenido en secciones estructuradas
+                -->
                 <sheet>
+                    <!-- 
+                    IMAGEN/AVATAR DEL NAVÍO
+                    widget="image": Muestra y permite subir una imagen
+                    class="oe_avatar": Estilo circular para la imagen
+                    -->
                     <field name="image" widget="image" class="oe_avatar"/>
+                    <!-- 
+                    TÍTULO PRINCIPAL CON NOMBRE DEL NAVÍO
+                    oe_title: Clase para estilizar el título principal
+                    -->
                     <div class="oe_title">
                         <h1><field name="name"/></h1>
                     </div>
+                    <!-- 
+                    GRUPOS DE CAMPOS ORGANIZADOS EN COLUMNAS
+                    Muestra información general y de ubicación lado a lado
+                    -->
                     <group>
+                        <!-- 
+                        COLUMNA IZQUIERDA: INFORMACIÓN GENERAL
+                        Contiene datos básicos del navío
+                        -->
                         <group string="Información General">
-                            <field name="license_plate"/>
+                            <!-- Matrícula o placa del navío -->
+                            <field name="license_plate"/>  
+                            <!-- Capitán asignado (relación con contacto) -->
                             <field name="captain_id"/>
+                            <!-- Capacidad máxima de carga en kilogramos -->
                             <field name="capacity_kg"/>
+                            <!-- Número de tripulantes a bordo -->
                             <field name="tripulation_size"/>
                         </group>
+                        <!-- 
+                        COLUMNA DERECHA: UBICACIÓN Y ESTADO ACTUAL
+                        Contiene información dinámica de ubicación
+                        -->
                         <group string="Ubicación y Estado Actual">
+                            <!-- Zona actual donde se encuentra el navío -->
                             <field name="current_zone_id" options="{'no_create': True}"/>
+                            <!-- Fecha y hora del último zarpe (cuándo salió) -->
                             <field name="last_departure_datetime"/>
+                            <!-- Etiqueta para las coordenadas GPS -->
                             <label for="current_latitude" string="Coordenadas GPS"/>
+                            <!-- 
+                            CONTENEDOR EN FILA PARA COORDENADAS
+                            o_row: Clase para mostrar elementos en línea
+                            -->
                             <div class="o_row">
+                                <!-- Latitud actual -->
                                 <field name="current_latitude" placeholder="Lat"/> / 
+                                <!-- Longitud actual -->
                                 <field name="current_longitude" placeholder="Long"/>
                             </div>
                         </group>
-                    </group>
-                    
+                    </group> 
+                    <!-- 
+                    CUADERNO (NOTEBOOK) CON PESTAÑAS ADICIONALES
+                    Permite organizar mucha información en pestañas separadas
+                    -->
                     <notebook>
+                        <!-- 
+                        PESTAÑA 1: BITÁCORA DEL NAVÍO
+                        Muestra todos los eventos registrados para este navío
+                        -->
                         <page string="Bitácora">
+                            <!-- 
+                            CAMPO: LISTA DE REGISTROS DE BITÁCORA
+                            vessel_log_ids: Relación One2many con fishing.vessel.log
+                            -->
                             <field name="vessel_log_ids">
+                                <!-- 
+                                VISTA DE LISTA EMBEBIDA
+                                Muestra los registros en tabla dentro del formulario
+                                -->
                                 <list>
-                                    <field name="log_date" string="Fecha/Hora"/>
+                                    <!-- Columna: Fecha y hora del evento -->
+                                    <field name="log_date" string="Fecha/Hora"/>        
+                                    <!-- Columna: Tipo de evento -->
                                     <field name="log_type" string="Tipo"/>
+                                    <!-- Columna: Zona donde ocurrió -->
                                     <field name="zone_id" string="Zona"/>
+                                    <!-- Columna: Especie capturada -->
                                     <field name="species" string="Especie"/>
+                                    <!-- Columna: Cantidad en kilogramos -->
                                     <field name="catch_kg" string="Kg"/>
+                                    <!-- Columna: Notas adicionales -->
                                     <field name="notes" string="Notas"/>
                                 </list>
                             </field>
                         </page>
-                        
+                        <!-- 
+                        PESTAÑA 2: OPERACIONES DEL NAVÍO
+                        Contiene botones para diversas operaciones administrativas
+                        -->
                         <page string="Operaciones">
+                            <!-- 
+                            GRUPOS DE BOTONES ORGANIZADOS POR CATEGORÍA
+                            Cada group representa una categoría de operaciones
+                            -->
                             <group>
+                                <!-- 
+                                GRUPO 1: MANTENIMIENTO
+                                Botones para iniciar/finalizar mantenimiento
+                                -->
                                 <group>
+                                    <!-- 
+                                    BOTÓN: INICIAR MANTENIMIENTO
+                                    Solo visible cuando el navío está en muelle
+                                    class="btn-warning": Estilo amarillo/naranja (advertencia)
+                                    Cambia estado a "Mantenimiento"
+                                    -->
                                     <button name="action_start_maintenance" 
                                             string="Iniciar Mantenimiento" 
                                             type="object" 
                                             class="btn-warning"
-                                            invisible="state != 'docked'"/>
-                                            
+                                            invisible="state != 'docked'"/>             
+                                    <!-- 
+                                    BOTÓN: FINALIZAR MANTENIMIENTO
+                                    Solo visible cuando el navío está en mantenimiento
+                                    class="btn-warning": Estilo amarillo/naranja
+                                    Cambia estado a "En Muelle"
+                                    -->
                                     <button name="action_end_maintenance" 
                                             string="Finalizar Mantenimiento" 
                                             type="object" 
                                             class="btn-warning"
                                             invisible="state != 'maintenance'"/>
                                 </group>
+                                <!-- 
+                                GRUPO 2: SUMINISTROS
+                                Botones para registrar carga de combustible y provisiones
+                                -->
                                 <group>
+                                    <!-- 
+                                    BOTÓN: CARGA DE COMBUSTIBLE
+                                    Abre wizard para registrar carga de combustible
+                                    class="btn-primary": Estilo azul primario
+                                    -->
                                     <button name="action_register_fuel_loading" 
                                             string="Carga Combustible" 
                                             type="object" 
-                                            class="btn-primary"/>
-                                            
+                                            class="btn-primary"/>    
+                                    <!-- 
+                                    BOTÓN: CARGA DE PROVISIONES
+                                    Abre wizard para registrar carga de provisiones
+                                    class="btn-primary": Estilo azul primario
+                                    -->
                                     <button name="action_register_supplies" 
                                             string="Carga Provisiones" 
                                             type="object" 
                                             class="btn-primary"/>
                                 </group>
+                                <!-- 
+                                GRUPO 3: ADMINISTRACIÓN
+                                Botones para cambios de tripulación e inspecciones
+                                -->
                                 <group>
+                                    <!-- 
+                                    BOTÓN: CAMBIO DE TRIPULACIÓN
+                                    Abre wizard para registrar cambios de tripulación
+                                    class="btn-info": Estilo azul claro informativo
+                                    -->
                                     <button name="action_register_crew_change" 
                                             string="Cambio Tripulación" 
                                             type="object" 
-                                            class="btn-info"/>
-                                            
+                                            class="btn-info"/>    
+                                    <!-- 
+                                    BOTÓN: REGISTRAR INSPECCIÓN
+                                    Abre wizard para registrar inspecciones técnicas
+                                    class="btn-warning": Estilo amarillo/naranja
+                                    -->
                                     <button name="action_register_inspection" 
                                             string="Registrar Inspección" 
                                             type="object" 
                                             class="btn-warning"/>
                                 </group>
+                                <!-- 
+                                GRUPO 4: EMERGENCIA
+                                    Botón especial para situaciones de emergencia
+                                    -->
                                 <group>
+                                    <!-- 
+                                    BOTÓN: EMERGENCIA
+                                    Abre wizard para registrar situaciones de emergencia
+                                    class="btn-danger": Estilo rojo para alta visibilidad
+                                    string="EMERGENCIA": Texto en mayúsculas para énfasis
+                                    -->
                                     <button name="action_register_emergency" 
                                             string="EMERGENCIA" 
                                             type="object" 
@@ -224,61 +570,137 @@
             </form>
         </field>
     </record>
-
+    <!-- SECCIÓN 5: VISTA DE LISTA DE NAVÍOS 
+    VISTA DE LISTA PARA TODOS LOS NAVÍOS
+    Muestra los navíos en formato de tabla con información clave
+    -->
     <record id="view_fishing_vessel_list" model="ir.ui.view">
         <field name="name">fishing.vessel.list</field>
         <field name="model">fishing.vessel</field>
         <field name="arch" type="xml">
+            <!-- 
+            LISTA CON DECORADORES CONDICIONALES
+            decoration-info: Resalta en azul los navíos que están "fishing"
+            decoration-danger: Resalta en rojo los navíos en "maintenance"
+            Proporciona información visual rápida del estado
+            -->
             <list decoration-info="state == 'fishing'" decoration-danger="state == 'maintenance'">
+                <!-- Columna: Nombre del navío -->
                 <field name="name"/>
+                <!-- Columna: Zona actual donde se encuentra -->
                 <field name="current_zone_id"/>
+                <!-- Columna: Capitán asignado -->
                 <field name="captain_id"/>
+                <!-- 
+                COLUMNA: ESTADO CON WIDGET DE BADGE
+                widget="badge": Muestra el estado como una etiqueta coloreada
+                Visualmente distingue: En Muelle (gris), En Faena (azul), Mantenimiento (rojo)
+                -->
                 <field name="state" widget="badge"/>
             </list>
         </field>
     </record>
-
+    <!-- SECCIÓN 6: VISTA DE FORMULARIO DE ZONA PESQUERA  
+    VISTA DE FORMULARIO PARA ZONAS PESQUERAS
+    Define el área geográfica donde se puede pescar
+    -->
     <record id="view_fishing_zone_form" model="ir.ui.view">
         <field name="name">fishing.zone.form</field>
         <field name="model">fishing.zone</field>
         <field name="arch" type="xml">
             <form>
                 <sheet>
+                    <!-- 
+                    TÍTULO PRINCIPAL CON NOMBRE Y CÓDIGO
+                    oe_title: Estilo para encabezado principal
+                    -->
                     <div class="oe_title">
+                        <!-- Nombre descriptivo de la zona -->
                         <h1><field name="name"/></h1>
+                        <!-- 
+                        CAMPO: CÓDIGO DE ZONA
+                        placeholder: Texto de ejemplo que aparece cuando está vacío
+                        Ejemplo: Z-001, Z-002, etc.
+                        -->
                         <field name="code" placeholder="Código (ej. Z-001)"/>
                     </div>
+                    <!-- 
+                    GRUPOS PARA INFORMACIÓN BÁSICA DE LA ZONA
+                    -->
                     <group>
+                        <!-- Columna izquierda: Tipo de zona -->
                         <group>
                             <field name="zone_type"/>
                         </group>
+                        <!-- Columna derecha: Coordenadas del centro -->
                         <group>
+                            <!-- Latitud del punto central de la zona -->
                             <field name="latitude"/>
+                            <!-- Longitud del punto central de la zona -->
                             <field name="longitude"/>
                         </group>
                     </group>
-
+                    <!-- 
+                    SEPARADOR PARA LA SECCIÓN DEL MAPA
+                    string: Título que aparece sobre el mapa
+                    -->
                     <separator string="Ubicación en el Mapa"/>
+                    <!-- 
+                    WIDGET PERSONALIZADO DE MAPA LEAFLET
+                    widget="zone_leaflet_map": Widget personalizado definido en JavaScript
+                    nolabel="1": No muestra etiqueta "Latitud"
+                    options="{'other_fields': ['longitude']}": Pasa la longitud como parámetro
+                    Muestra mapa interactivo donde se puede ver y modificar la ubicación
+                    -->
                     <field name="latitude" widget="zone_leaflet_map" nolabel="1" options="{'other_fields': ['longitude']}"/>
-                    
+                    <!-- 
+                    CUADERNO CON PESTAÑAS ADICIONALES
+                    -->
                     <notebook>
+                        <!-- 
+                        PESTAÑA 1: NAVÍOS EN LA ZONA
+                        Muestra qué navíos están actualmente en esta zona
+                        -->
                         <page string="Navíos en la Zona">
+                            <!-- 
+                            CAMPO: LISTA DE NAVÍOS EN ESTA ZONA
+                            vessel_ids: Relación One2many inversa desde fishing.vessel
+                            readonly="1": Solo lectura, no se pueden modificar aquí
+                            -->
                             <field name="vessel_ids" readonly="1">
                                 <list>
+                                    <!-- Columna: Nombre del navío -->
                                     <field name="name"/>
+                                    <!-- Columna: Matrícula del navío -->
                                     <field name="license_plate"/>
+                                    <!-- Columna: Estado actual del navío -->
                                     <field name="state"/>
+                                    <!-- Columna: Cuándo zarpó por última vez -->
                                     <field name="last_departure_datetime"/>
                                 </list>
                             </field>
                         </page>
+                        <!-- 
+                        PESTAÑA 2: BITÁCORA DE LA ZONA
+                        Muestra todas las actividades registradas en esta zona
+                        -->
                         <page string="Bitácora">
+                            <!-- 
+                            CAMPO: LISTA DE ACTIVIDADES EN ESTA ZONA
+                            log_ids: Relación One2many con fishing.zone.log
+                            readonly="1": Solo lectura
+                            -->
                             <field name="log_ids" readonly="1">
                                 <list>
-                                    <field name="date"/>
+                                    <!-- Columna: Fecha de la actividad -->
+                                    <field name="date"/>     
+                                    <!-- Columna: Navío que realizó la actividad -->
                                     <field name="vessel_id"/>
+                                    <!-- Columna: Tipo de actividad (entrada, salida, captura) -->
                                     <field name="activity_type"/>
+                                    <!-- Columna: Especie capturada (si aplica) -->
                                     <field name="species"/>
+                                    <!-- Columna: Cantidad capturada en kg (si aplica) -->
                                     <field name="catch_kg"/>
                                 </list>
                             </field>
@@ -288,38 +710,73 @@
             </form>
         </field>
     </record>
-
+    <!-- SECCIÓN 7: ACCIONES DE VENTANA PARA LOS MODELOS 
+    ACCIÓN PARA ABRIR LA VISTA DE NAVÍOS
+    Define cómo se accede a la lista/formulario de navíos desde el menú
+    -->
     <record id="action_fishing_vessel" model="ir.actions.act_window">
         <field name="name">Navíos</field>
         <field name="res_model">fishing.vessel</field>
+        <!-- view_mode: Orden en que se muestran las vistas (primero lista, luego formulario) -->
         <field name="view_mode">list,form</field>
     </record>
-
+    <!-- 
+    ACCIÓN PARA ABRIR LA VISTA DE ZONAS PESQUERAS
+    -->
     <record id="action_fishing_zone" model="ir.actions.act_window">
         <field name="name">Zonas Pesqueras</field>
         <field name="res_model">fishing.zone</field>
         <field name="view_mode">list,form</field>
     </record>
-
+    <!-- 
+    ACCIÓN PARA ABRIR LA VISTA DE CARDÚMENES
+    Cardúmenes son grupos de peces avistados
+    -->
     <record id="action_fishing_shoal" model="ir.actions.act_window">
         <field name="name">Cardúmenes</field>
         <field name="res_model">fishing.shoal</field>
         <field name="view_mode">list,form</field>
     </record>
-
+    <!-- 
+    ACCIÓN PARA ABRIR LA VISTA DE BITÁCORA DE NAVÍOS
+    Acceso directo a todos los registros de eventos
+    -->
     <record id="action_fishing_vessel_log" model="ir.actions.act_window">
         <field name="name">Bitácora de Navíos</field>
         <field name="res_model">fishing.vessel.log</field>
         <field name="view_mode">list,form</field>
+        <!-- 
+        DOMINIO VACÍO: Muestra todos los registros
+        Se podría filtrar aquí, ej: [('log_date', '>=', fecha_inicio)]
+        -->
         <field name="domain">[]</field>
+        <!-- 
+        view_id: Especifica qué vista de lista usar
+        ref: Referencia a la vista definida anteriormente
+        -->
         <field name="view_id" ref="view_fishing_vessel_log_list"/>
     </record>
-
-    <menuitem id="menu_fishing_root" name="Pesca2" web_icon="fishing_management,static/description/icon.png"/>
-    
+    <!--SECCIÓN 8: ESTRUCTURA DEL MENÚ DE NAVEGACIÓN 
+    MENÚ PRINCIPAL DEL MÓDULO
+    Aparece en la barra de navegación principal de Odoo
+    -->
+    <menuitem id="menu_fishing_root" 
+              name="Pesca2" 
+              web_icon="fishing_management,static/description/icon.png"/>
+    <!-- 
+    SUBMENÚS ORGANIZADOS JERÁRQUICAMENTE
+    parent: Menú padre (menu_fishing_root)
+    sequence: Orden de aparición (menor número = más arriba)
+    action: Acción que se ejecuta al hacer clic
+    -->
+    <!-- Submenú para gestionar cardúmenes avistados -->
     <menuitem id="menu_shoal" name="Cardúmenes" parent="menu_fishing_root" sequence="10" action="action_fishing_shoal"/>
+    <!-- Submenú para gestionar navíos pesqueros -->
     <menuitem id="menu_vessel" name="Navíos" parent="menu_fishing_root" sequence="20" action="action_fishing_vessel"/>
+    <!-- Submenú para gestionar zonas pesqueras -->
     <menuitem id="menu_zone" name="Zonas Pesqueras" parent="menu_fishing_root" sequence="30" action="action_fishing_zone"/>
+    <!-- Submenú para ver la bitácora completa -->
     <menuitem id="menu_vessel_log" name="Bitácora" parent="menu_fishing_root" sequence="35" action="action_fishing_vessel_log"/>
+    <!-- Submenú para generar reportes gráficos -->
     <menuitem id="menu_report" name="Reportes" parent="menu_fishing_root" sequence="40" action="action_fishing_report_wizard"/>
 </odoo>

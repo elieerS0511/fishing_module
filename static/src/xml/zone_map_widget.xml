@@ -1,6 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates>
+    <!-- 
+    TEMPLATE OWL PARA EL WIDGET "ZoneMapWidget"
+    t-name: Nombre único del template (debe coincidir con el usado en JavaScript)
+    owl="1": Indica que es un componente OWL moderno (versión 1+)
+    -->
     <t t-name="pesca2.ZoneMapWidget" owl="1">
+        <!-- 
+        CONTENEDOR PRINCIPAL DEL MAPA
+        t-ref="mapContainer": Referencia que se usa en JavaScript para acceder a este elemento
+        class="o_zone_map_widget": Clase CSS para estilizar el contenedor
+        style="height: 500px; width: 100%;": Dimensiones fijas para el mapa
+          - height: 500px: Altura suficiente para ver el mapa claramente
+          - width: 100%;: Ocupa todo el ancho disponible del contenedor padre
+        Este div será reemplazado dinámicamente por el mapa Leaflet cuando se renderice
+        El widget JavaScript buscará este elemento por la referencia "mapContainer"
+        y convertirá este div en un mapa interactivo de Leaflet.
+        -->
         <div t-ref="mapContainer" class="o_zone_map_widget" style="height: 500px; width: 100%;" />
     </t>
 </templates>
